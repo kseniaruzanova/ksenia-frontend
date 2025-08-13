@@ -16,10 +16,10 @@
         <div v-if="loading" class="text-center">
           <p class="text-gray-500">Загрузка статистики...</p>
         </div>
-        
+
         <div v-else-if="stats" class="mb-8">
           <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Статистика ваших пользователей</h2>
-          
+
           <!-- Основные метрики -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
@@ -33,7 +33,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
               <div class="flex items-center">
                 <div class="flex-1">
@@ -72,7 +72,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg p-6 text-white">
               <div class="flex items-center">
                 <div class="flex-1">
@@ -248,19 +248,19 @@ function calculateStats(users) {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  
+
   const todayActive = users.filter(user => {
     if (!user.updatedAt) return false
     const userDate = new Date(user.updatedAt)
     return userDate >= today
   }).length
-  
+
   const weeklyNew = users.filter(user => {
     if (!user.createdAt) return false
     const userDate = new Date(user.createdAt)
     return userDate >= weekAgo
   }).length
-  
+
   return {
     totalUsers: users.length,
     todayActive,
@@ -274,20 +274,23 @@ function calculateStats(users) {
 async function fetchUserStats() {
   loading.value = true
   try {
-    const response = await fetch(`${config.public.apiBase}/api/users/all`, {
+    const response = await fetch(`${config.public.apiBase}/api/statistics/general`, {
       headers: {
         'Authorization': `Bearer ${token.value}`
       }
     })
-    
+
     if (!response.ok) {
       throw new Error('Не удалось загрузить статистику')
     }
-    
+
     const data = await response.json()
     const users = data.users || data || []
-    
-    stats.value = calculateStats(users)
+
+    stats.value = {
+      ...calculateStats(users),
+      totalEarnings: data.paymentsSum,
+    }
   } catch (err) {
     console.error('Ошибка загрузки статистики:', err)
     stats.value = {
@@ -312,4 +315,4 @@ function handleLogout() {
 onMounted(() => {
   fetchUserStats()
 })
-</script> 
+</script>
