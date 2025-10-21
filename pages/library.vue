@@ -1,23 +1,32 @@
 <template>
   <div>
     <Navbar />
-    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-gray-50 py-4 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-8">
       <div class="max-w-7xl mx-auto">
         <!-- Заголовок -->
-        <div class="text-center mb-8">
-          <h1 class="text-3xl font-bold text-gray-900">
+        <div class="text-center mb-6 sm:mb-8">
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
             {{ isAdmin ? 'Управление видеоконтентом' : 'Видеобиблиотека' }}
           </h1>
-          <p class="mt-4 text-lg text-gray-500">
-            {{ isAdmin ? 'Добавляйте и управляйте видео материалами' : 'Просматривайте обучающие материалы' }}
+          <p class="mt-2 sm:mt-4 text-base sm:text-lg text-gray-500">
+            {{ isAdmin ? 'Добавляйте и управляйте видео материалами и курсами' : 'Просматривайте обучающие материалы' }}
           </p>
         </div>
 
-        <!-- Кнопка добавления видео для администратора -->
-        <div v-if="isAdmin" class="mb-6 flex justify-end">
+        <!-- Кнопки управления для администратора -->
+        <div v-if="isAdmin" class="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+          <button 
+            @click="showPlaylistModal = true"
+            class="px-4 py-2.5 sm:py-2 bg-green-600 text-white rounded-md hover:bg-green-700 active:bg-green-800 flex items-center justify-center text-sm sm:text-base touch-manipulation"
+          >
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+            </svg>
+            Управление курсами
+          </button>
           <button 
             @click="showAddModal = true"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+            class="px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center text-sm sm:text-base touch-manipulation"
           >
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -26,98 +35,359 @@
           </button>
         </div>
 
+        <!-- Кнопка фильтра для мобильных устройств -->
+        <div class="lg:hidden mb-4">
+          <button 
+            @click="showMobilePlaylistMenu = !showMobilePlaylistMenu"
+            class="w-full px-4 py-3 bg-white rounded-lg shadow flex items-center justify-between text-left touch-manipulation"
+          >
+            <span class="font-medium text-gray-900">
+              {{ getMobilePlaylistLabel() }}
+            </span>
+            <svg 
+              class="w-5 h-5 text-gray-500 transition-transform" 
+              :class="{ 'rotate-180': showMobilePlaylistMenu }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <!-- Выпадающее меню курсов на мобильных -->
+          <div 
+            v-show="showMobilePlaylistMenu"
+            class="mt-2 bg-white rounded-lg shadow-lg p-2 space-y-1 max-h-96 overflow-y-auto"
+          >
+            <button
+              @click="selectPlaylist(null); showMobilePlaylistMenu = false"
+              :class="[
+                'w-full text-left px-3 py-2.5 rounded-md transition touch-manipulation',
+                selectedPlaylist === null 
+                  ? 'bg-blue-100 text-blue-700 font-medium' 
+                  : 'hover:bg-gray-100 active:bg-gray-200'
+              ]"
+            >
+              <div class="flex items-center justify-between">
+                <span>Все видео</span>
+                <span class="text-sm text-gray-500">{{ allVideosCount }}</span>
+              </div>
+            </button>
+            
+            <button
+              @click="selectPlaylist('none'); showMobilePlaylistMenu = false"
+              :class="[
+                'w-full text-left px-3 py-2.5 rounded-md transition touch-manipulation',
+                selectedPlaylist === 'none' 
+                  ? 'bg-blue-100 text-blue-700 font-medium' 
+                  : 'hover:bg-gray-100 active:bg-gray-200'
+              ]"
+            >
+              <div class="flex items-center justify-between">
+                <span>Без курса</span>
+                <span class="text-sm text-gray-500">{{ noPlaylistVideosCount }}</span>
+              </div>
+            </button>
+
+            <hr class="my-2">
+            
+            <button
+              v-for="playlist in playlists"
+              :key="playlist._id"
+              @click="playlist._id && selectPlaylist(playlist._id); showMobilePlaylistMenu = false"
+              :class="[
+                'w-full text-left px-3 py-2.5 rounded-md transition touch-manipulation',
+                selectedPlaylist === playlist._id 
+                  ? 'bg-blue-100 text-blue-700 font-medium' 
+                  : 'hover:bg-gray-100 active:bg-gray-200'
+              ]"
+            >
+              <div class="flex items-center justify-between">
+                <span class="truncate">{{ playlist.name }}</span>
+                <span class="text-sm text-gray-500">{{ playlist._id ? getPlaylistVideoCount(playlist._id) : 0 }}</span>
+              </div>
+            </button>
+            
+            <p v-if="playlists.length === 0" class="text-sm text-gray-500 px-3 py-2">
+              Нет курсов
+            </p>
+          </div>
+        </div>
+
+        <!-- Плейлисты и контент -->
+        <div class="flex gap-6">
+          <!-- Боковая панель с курсами (только для десктопа) -->
+          <div class="hidden lg:block w-64 flex-shrink-0">
+            <div class="bg-white rounded-lg shadow p-4 sticky top-4">
+              <h3 class="font-semibold text-lg mb-4">Курсы</h3>
+              
+              <div class="space-y-2">
+                <!-- Все видео -->
+                <button
+                  @click="selectPlaylist(null)"
+                  :class="[
+                    'w-full text-left px-3 py-2 rounded-md transition',
+                    selectedPlaylist === null 
+                      ? 'bg-blue-100 text-blue-700 font-medium' 
+                      : 'hover:bg-gray-100'
+                  ]"
+                >
+                  <div class="flex items-center justify-between">
+                    <span>Все видео</span>
+                    <span class="text-sm text-gray-500">{{ allVideosCount }}</span>
+                  </div>
+                </button>
+                
+                <!-- Без курса -->
+                <button
+                  @click="selectPlaylist('none')"
+                  :class="[
+                    'w-full text-left px-3 py-2 rounded-md transition',
+                    selectedPlaylist === 'none' 
+                      ? 'bg-blue-100 text-blue-700 font-medium' 
+                      : 'hover:bg-gray-100'
+                  ]"
+                >
+                  <div class="flex items-center justify-between">
+                    <span>Без курса</span>
+                    <span class="text-sm text-gray-500">{{ noPlaylistVideosCount }}</span>
+                  </div>
+                </button>
+
+                <hr class="my-2">
+                
+                <!-- Список курсов -->
+                <button
+                  v-for="playlist in playlists"
+                  :key="playlist._id"
+                  @click="playlist._id && selectPlaylist(playlist._id)"
+                  :class="[
+                    'w-full text-left px-3 py-2 rounded-md transition',
+                    selectedPlaylist === playlist._id 
+                      ? 'bg-blue-100 text-blue-700 font-medium' 
+                      : 'hover:bg-gray-100'
+                  ]"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="truncate">{{ playlist.name }}</span>
+                    <span class="text-sm text-gray-500">{{ playlist._id ? getPlaylistVideoCount(playlist._id) : 0 }}</span>
+                  </div>
+                </button>
+                
+                <p v-if="playlists.length === 0" class="text-sm text-gray-500 px-3 py-2">
+                  Нет курсов
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Основной контент -->
+          <div class="flex-1 min-w-0">
+            <!-- Список видео -->
+            <div v-if="loading" class="text-center py-12">
+              <p class="text-gray-500">Загрузка видео...</p>
+            </div>
+            
+            <div v-else-if="filteredVideos.length === 0" class="text-center py-8 sm:py-12 bg-white rounded-lg shadow">
+              <p class="text-gray-500 px-4">
+                {{ selectedPlaylist ? 'В этом курсе пока нет видео' : 'Видео пока нет' }}
+              </p>
+              <button 
+                v-if="isAdmin" 
+                @click="showAddModal = true"
+                class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 active:bg-blue-800 touch-manipulation"
+              >
+                Добавить первое видео
+              </button>
+            </div>
+            
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              <div 
+                v-for="video in filteredVideos" 
+                :key="video._id" 
+                class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <!-- Обложка видео -->
+                <div class="relative">
+                  <img 
+                    :src="getThumbnailUrl(video)" 
+                    :alt="video.title" 
+                    class="w-full h-44 sm:h-48 object-cover"
+                    @error="handleImageError"
+                  >
+                  <div class="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+                    {{ video.type === 'file' ? 'Файл' : 'Ссылка' }}
+                  </div>
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <button 
+                      @click="playVideo(video)"
+                      class="bg-black bg-opacity-50 rounded-full p-4 sm:p-3 hover:bg-opacity-70 active:bg-opacity-80 transition touch-manipulation"
+                    >
+                      <svg class="w-10 h-10 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 5v14l11-7z"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Информация о видео -->
+                <div class="p-3 sm:p-4">
+                  <h3 class="font-semibold text-base sm:text-lg mb-1 sm:mb-2 line-clamp-2">{{ video.title }}</h3>
+                  <p class="text-gray-600 text-sm mb-3 sm:mb-4 line-clamp-2">{{ video.description }}</p>
+                  
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-500">
+                      {{ formatDate(video.createdAt) }}
+                    </span>
+                    
+                    <!-- Кнопки управления для администратора -->
+                    <div v-if="isAdmin" class="flex space-x-1 sm:space-x-2">
+                      <button 
+                        @click="editVideo(video)"
+                        class="text-blue-600 hover:text-blue-800 active:text-blue-900 p-2 sm:p-1 touch-manipulation"
+                        title="Редактировать"
+                      >
+                        <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                      </button>
+                      <button 
+                        @click="deleteVideo(video._id)"
+                        class="text-red-600 hover:text-red-800 active:text-red-900 p-2 sm:p-1 touch-manipulation"
+                        title="Удалить"
+                      >
+                        <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- Модальное окно добавления/редактирования видео -->
-        <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
-            <div class="p-6">
-              <h2 class="text-xl font-semibold mb-4">
-                {{ editingVideo ? 'Редактирование видео' : 'Добавление нового видео' }}
-              </h2>
+        <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+          <div class="bg-white rounded-t-2xl sm:rounded-lg shadow-xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            <div class="p-4 sm:p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg sm:text-xl font-semibold">
+                  {{ editingVideo ? 'Редактирование видео' : 'Добавление нового видео' }}
+                </h2>
+                <button 
+                  @click="closeModal" 
+                  class="sm:hidden text-gray-400 hover:text-gray-600 p-2 touch-manipulation"
+                >
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
               
               <form @submit.prevent="saveVideo">
                 <div class="mb-4">
-                  <label class="block text-gray-700 mb-2">Название видео</label>
+                  <label class="block text-gray-700 text-sm sm:text-base mb-2">Название видео</label>
                   <input 
                     v-model="currentVideo.title" 
                     type="text" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md" 
+                    class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md text-base" 
                     required
                     placeholder="Введите название видео"
                   >
                 </div>
                 
                 <div class="mb-4">
-                  <label class="block text-gray-700 mb-2">Описание</label>
+                  <label class="block text-gray-700 text-sm sm:text-base mb-2">Описание</label>
                   <textarea 
                     v-model="currentVideo.description" 
                     rows="3" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md" 
+                    class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md text-base" 
                     placeholder="Добавьте описание видео"
                   ></textarea>
                 </div>
+
+                <div class="mb-4">
+                  <label class="block text-gray-700 text-sm sm:text-base mb-2">Курс</label>
+                  <select 
+                    v-model="currentVideo.playlistId" 
+                    class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md text-base"
+                  >
+                    <option :value="null">Без курса</option>
+                    <option 
+                      v-for="playlist in playlists" 
+                      :key="playlist._id" 
+                      :value="playlist._id"
+                    >
+                      {{ playlist.name }}
+                    </option>
+                  </select>
+                </div>
                 
                 <div class="mb-4">
-                  <label class="block text-gray-700 mb-2">Тип видео</label>
-                  <div class="flex space-x-4">
+                  <label class="block text-gray-700 text-sm sm:text-base mb-2">Тип видео</label>
+                  <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <label class="flex items-center">
                       <input 
                         type="radio" 
                         v-model="currentVideo.type" 
                         value="file" 
-                        class="mr-2"
+                        class="mr-2 w-4 h-4"
                         @change="clearSource"
                       >
-                      Загрузить файл
+                      <span class="text-sm sm:text-base">Загрузить файл</span>
                     </label>
                     <label class="flex items-center">
                       <input 
                         type="radio" 
                         v-model="currentVideo.type" 
                         value="link" 
-                        class="mr-2"
+                        class="mr-2 w-4 h-4"
                         @change="clearSource"
                       >
-                      Вставить ссылку
+                      <span class="text-sm sm:text-base">Вставить ссылку</span>
                     </label>
                   </div>
                 </div>
                 
                 <div class="mb-4" v-if="currentVideo.type === 'link'">
-                  <label class="block text-gray-700 mb-2">Ссылка на видео</label>
+                  <label class="block text-gray-700 text-sm sm:text-base mb-2">Ссылка на видео</label>
                   <input 
                     v-model="currentVideo.source" 
                     type="url" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md" 
+                    class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md text-base" 
                     placeholder="https://example.com/video.mp4"
                     required
                   >
                 </div>
                 
                 <div class="mb-4" v-if="currentVideo.type === 'file'">
-                  <label class="block text-gray-700 mb-2">Видео файл</label>
+                  <label class="block text-gray-700 text-sm sm:text-base mb-2">Видео файл</label>
                   <input 
                     type="file" 
                     ref="videoFile"
                     accept="video/*" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base" 
                     @change="handleFileUpload"
                     :required="!editingVideo || !currentVideo.source"
                   >
-                  <p class="text-sm text-gray-500 mt-1" v-if="currentVideo.source && currentVideo.type === 'file'">
+                  <p class="text-xs sm:text-sm text-gray-500 mt-1" v-if="currentVideo.source && currentVideo.type === 'file'">
                     Текущий файл: {{ currentVideo.source.split('/').pop() }}
                   </p>
                 </div>
                 
                 <div class="mb-4">
-                  <label class="block text-gray-700 mb-2">Обложка видео</label>
+                  <label class="block text-gray-700 text-sm sm:text-base mb-2">Обложка видео</label>
                   <input 
                     type="file" 
                     ref="thumbnailFile"
                     accept="image/*" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base" 
                     @change="handleThumbnailUpload"
                   >
-                  <p class="text-sm text-gray-500 mt-1" v-if="currentVideo.thumbnail">
+                  <p class="text-xs sm:text-sm text-gray-500 mt-1" v-if="currentVideo.thumbnail">
                     Текущая обложка: {{ currentVideo.thumbnail.split('/').pop() }}
                   </p>
                   <div v-if="thumbnailPreview" class="mt-2">
@@ -128,17 +398,17 @@
                   </div>
                 </div>
                 
-                <div class="flex justify-end space-x-3 mt-6">
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 mt-6 pt-4 border-t sm:border-t-0 sticky sm:static bottom-0 bg-white sm:bg-transparent -mx-4 sm:mx-0 px-4 sm:px-0 pb-4 sm:pb-0">
                   <button 
                     type="button" 
                     @click="closeModal"
-                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    class="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 active:bg-gray-100 touch-manipulation"
                   >
                     Отмена
                   </button>
                   <button 
                     type="submit" 
-                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 active:bg-blue-800 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
                     :disabled="saving"
                   >
                     {{ saving ? 'Сохранение...' : (editingVideo ? 'Обновить' : 'Сохранить') }}
@@ -148,96 +418,117 @@
             </div>
           </div>
         </div>
-
-        <!-- Список видео -->
-        <div v-if="loading" class="text-center py-12">
-          <p class="text-gray-500">Загрузка видео...</p>
-        </div>
         
-        <div v-else-if="videos.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-          <p class="text-gray-500">Видео пока нет</p>
-          <button 
-            v-if="isAdmin" 
-            @click="showAddModal = true"
-            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Добавить первое видео
-          </button>
-        </div>
-        
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div 
-            v-for="video in videos" 
-            :key="video._id" 
-            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-          >
-            <!-- Обложка видео -->
-            <div class="relative">
-              <img 
-                :src="getThumbnailUrl(video)" 
-                :alt="video.title" 
-                class="w-full h-48 object-cover"
-                @error="handleImageError"
-              >
-              <div class="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-                {{ video.type === 'file' ? 'Файл' : 'Ссылка' }}
-              </div>
-              <div class="absolute inset-0 flex items-center justify-center">
+        <!-- Модальное окно управления курсами -->
+        <div v-if="showPlaylistModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+          <div class="bg-white rounded-t-2xl sm:rounded-lg shadow-xl w-full max-w-3xl max-h-[95vh] sm:max-h-[80vh] overflow-y-auto">
+            <div class="p-4 sm:p-6">
+              <div class="flex justify-between items-center mb-4 sm:mb-4">
+                <h2 class="text-lg sm:text-xl font-semibold">Управление курсами</h2>
                 <button 
-                  @click="playVideo(video)"
-                  class="bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition"
+                  @click="closePlaylistModal"
+                  class="text-gray-400 hover:text-gray-600 p-2 touch-manipulation"
                 >
-                  <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 5v14l11-7z"></path>
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
                 </button>
               </div>
-            </div>
-            
-            <!-- Информация о видео -->
-            <div class="p-4">
-              <h3 class="font-semibold text-lg mb-2">{{ video.title }}</h3>
-              <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ video.description }}</p>
-              
-              <div class="flex justify-between items-center">
-                <span class="text-xs text-gray-500">
-                  {{ formatDate(video.createdAt) }}
-                </span>
-                
-                <!-- Кнопки управления для администратора -->
-                <div v-if="isAdmin" class="flex space-x-2">
-                  <button 
-                    @click="editVideo(video)"
-                    class="text-blue-600 hover:text-blue-800 p-1"
-                    title="Редактировать"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                  </button>
-                  <button 
-                    @click="deleteVideo(video._id)"
-                    class="text-red-600 hover:text-red-800 p-1"
-                    title="Удалить"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                  </button>
+
+              <!-- Форма создания нового курса -->
+              <div class="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-medium text-sm sm:text-base mb-3">
+                  {{ editingPlaylist ? 'Редактировать курс' : 'Создать новый курс' }}
+                </h3>
+                <form @submit.prevent="savePlaylist">
+                  <div class="mb-3">
+                    <input 
+                      v-model="currentPlaylist.name" 
+                      type="text" 
+                      class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md text-base" 
+                      placeholder="Название курса"
+                      required
+                    >
+                  </div>
+                  <div class="mb-3">
+                    <textarea 
+                      v-model="currentPlaylist.description" 
+                      rows="2" 
+                      class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md text-base" 
+                      placeholder="Описание (необязательно)"
+                    ></textarea>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <button 
+                      type="submit" 
+                      class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 active:bg-blue-800 touch-manipulation disabled:opacity-50"
+                      :disabled="savingPlaylist"
+                    >
+                      {{ savingPlaylist ? 'Сохранение...' : (editingPlaylist ? 'Обновить' : 'Создать') }}
+                    </button>
+                    <button 
+                      v-if="editingPlaylist"
+                      type="button" 
+                      @click="cancelEditPlaylist"
+                      class="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 active:bg-gray-100 touch-manipulation"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Список курсов -->
+              <div class="space-y-2">
+                <h3 class="font-medium text-sm sm:text-base mb-3">Существующие курсы</h3>
+                <div 
+                  v-for="playlist in playlists" 
+                  :key="playlist._id"
+                  class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition"
+                >
+                  <div class="flex-1 min-w-0 pr-2">
+                    <h4 class="font-medium text-sm sm:text-base truncate">{{ playlist.name }}</h4>
+                    <p class="text-xs sm:text-sm text-gray-600 line-clamp-1" v-if="playlist.description">{{ playlist.description }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Видео: {{ playlist._id ? getPlaylistVideoCount(playlist._id) : 0 }}</p>
+                  </div>
+                  <div class="flex gap-1 sm:gap-2">
+                    <button 
+                      @click="editPlaylist(playlist)"
+                      class="p-2 text-blue-600 hover:text-blue-800 active:text-blue-900 touch-manipulation"
+                      title="Редактировать"
+                    >
+                      <svg class="w-5 h-5 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                      </svg>
+                    </button>
+                    <button 
+                      @click="deletePlaylist(playlist._id)"
+                      class="p-2 text-red-600 hover:text-red-800 active:text-red-900 touch-manipulation"
+                      title="Удалить"
+                    >
+                      <svg class="w-5 h-5 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
+                
+                <p v-if="playlists.length === 0" class="text-center py-4 text-sm sm:text-base text-gray-500">
+                  Нет курсов. Создайте первый курс выше.
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Модальное окно просмотра видео -->
-        <div v-if="showVideoModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div class="bg-black rounded-lg w-full max-w-4xl relative">
-            <div class="p-4 flex justify-between items-center border-b border-gray-800">
-              <h3 class="text-white text-lg font-semibold">{{ currentVideo.title }}</h3>
+        <div v-if="showVideoModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-0 sm:p-4 z-50">
+          <div class="bg-black rounded-none sm:rounded-lg w-full h-full sm:h-auto sm:max-w-4xl relative flex flex-col">
+            <div class="p-3 sm:p-4 flex justify-between items-center border-b border-gray-800">
+              <h3 class="text-white text-base sm:text-lg font-semibold pr-2 line-clamp-1">{{ currentVideo.title }}</h3>
               <button 
                 @click="closeVideoModal"
-                class="text-white hover:text-gray-300"
+                class="text-white hover:text-gray-300 active:text-gray-400 p-2 touch-manipulation flex-shrink-0"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -245,38 +536,39 @@
               </button>
             </div>
             
-            <div class="relative">
+            <div class="relative flex-1 flex items-center">
               <div v-if="videoLoading" class="absolute inset-0 flex items-center justify-center bg-black z-10">
-                <div class="text-white text-center">
-                  <div class="w-16 h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin mx-auto mb-4"></div>
-                  <p>Загрузка видео...</p>
-                  <p class="text-sm text-gray-400 mt-2">Если видео не загружается, попробуйте позже</p>
+                <div class="text-white text-center px-4">
+                  <div class="w-12 h-12 sm:w-16 sm:h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin mx-auto mb-4"></div>
+                  <p class="text-sm sm:text-base">Загрузка видео...</p>
+                  <p class="text-xs sm:text-sm text-gray-400 mt-2">Если видео не загружается, попробуйте позже</p>
                 </div>
               </div>
               
               <div v-if="videoError" class="absolute inset-0 flex items-center justify-center bg-black z-10">
                 <div class="text-white text-center p-4">
-                  <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg class="w-12 h-12 sm:w-16 sm:h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
-                  <h4 class="text-xl font-bold mb-2">Ошибка загрузки видео</h4>
-                  <p class="mb-4">Видео не загрузилось в течение отведенного времени.</p>
+                  <h4 class="text-lg sm:text-xl font-bold mb-2">Ошибка загрузки видео</h4>
+                  <p class="text-sm sm:text-base mb-4">Видео не загрузилось в течение отведенного времени.</p>
                   <button 
                     @click="retryVideoLoad"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    class="px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 active:bg-blue-800 touch-manipulation"
                   >
                     Попробовать снова
                   </button>
                 </div>
               </div>
               
-              <div v-if="currentVideo.type === 'file'" class="aspect-w-16 aspect-h-9">
+              <div v-if="currentVideo.type === 'file'" class="w-full">
                 <video 
                   ref="videoPlayer"
                   :src="videoSource" 
                   controls 
-                  class="w-full h-auto"
+                  class="w-full h-auto max-h-[60vh] sm:max-h-none"
                   preload="auto"
+                  playsinline
                   @loadstart="handleVideoLoadStart"
                   @progress="handleVideoProgress"
                   @canplay="handleVideoCanPlay"
@@ -285,21 +577,23 @@
                 ></video>
               </div>
               
-              <div v-else-if="currentVideo.type === 'link'" class="aspect-w-16 aspect-h-9">
-                <iframe 
-                  :src="getEmbedUrl(currentVideo.source)" 
-                  class="w-full h-96"
-                  frameborder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                  @load="handleIframeLoad"
-                ></iframe>
+              <div v-else-if="currentVideo.type === 'link'" class="w-full">
+                <div class="aspect-w-16 aspect-h-9">
+                  <iframe 
+                    :src="getEmbedUrl(currentVideo.source)" 
+                    class="w-full h-[60vh] sm:h-96"
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    @load="handleIframeLoad"
+                  ></iframe>
+                </div>
               </div>
             </div>
             
-            <div class="p-4 text-white bg-gray-900">
-              <p class="text-gray-400 mb-2">Описание:</p>
-              <p>{{ currentVideo.description }}</p>
+            <div class="p-3 sm:p-4 text-white bg-gray-900 max-h-32 sm:max-h-none overflow-y-auto">
+              <p class="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">Описание:</p>
+              <p class="text-sm sm:text-base">{{ currentVideo.description }}</p>
             </div>
           </div>
         </div>
@@ -316,6 +610,16 @@ interface Video {
   type: 'file' | 'link'
   source: string
   thumbnail?: string
+  playlistId?: string | null
+  order?: number
+  createdAt?: string
+}
+
+interface Playlist {
+  _id?: string
+  name: string
+  description?: string
+  order?: number
   createdAt?: string
 }
 
@@ -326,10 +630,16 @@ const token = useCookie('bearer-token')
 // Состояния компонента
 const showAddModal = ref(false)
 const showVideoModal = ref(false)
+const showPlaylistModal = ref(false)
+const showMobilePlaylistMenu = ref(false)
 const loading = ref(true)
 const saving = ref(false)
+const savingPlaylist = ref(false)
 const videos: Ref<Video[]> = ref([])
+const playlists: Ref<Playlist[]> = ref([])
 const editingVideo: Ref<Video | null> = ref(null)
+const editingPlaylist: Ref<Playlist | null> = ref(null)
+const selectedPlaylist: Ref<string | null | 'none'> = ref(null)
 const thumbnailPreview = ref('')
 const videoFile = ref<HTMLInputElement | null>(null)
 const thumbnailFile = ref<HTMLInputElement | null>(null)
@@ -350,8 +660,42 @@ const currentVideo: Ref<Video> = ref({
   description: '',
   type: 'file',
   source: '',
-  thumbnail: ''
+  thumbnail: '',
+  playlistId: null,
+  order: 0
 })
+
+// Текущий редактируемый плейлист
+const currentPlaylist: Ref<Playlist> = ref({
+  name: '',
+  description: '',
+  order: 0
+})
+
+// Вычисляемые свойства для подсчета видео
+const allVideosCount = computed(() => videos.value.length)
+const noPlaylistVideosCount = computed(() => videos.value.filter(v => !v.playlistId).length)
+
+const filteredVideos = computed(() => {
+  if (selectedPlaylist.value === null) {
+    return videos.value
+  } else if (selectedPlaylist.value === 'none') {
+    return videos.value.filter(v => !v.playlistId)
+  } else {
+    const filtered = videos.value.filter(v => {
+      return v.playlistId === selectedPlaylist.value
+    })
+    return filtered
+  }
+})
+
+function getPlaylistVideoCount(playlistId: string) {
+  return videos.value.filter(v => v.playlistId === playlistId).length
+}
+
+function selectPlaylist(playlistId: string | null | 'none') {
+  selectedPlaylist.value = playlistId
+}
 
 // Получение URL обложки
 function getThumbnailUrl(video: Video): string {
@@ -389,6 +733,25 @@ async function loadVideos() {
   }
 }
 
+// Загрузка плейлистов из API
+async function loadPlaylists() {
+  try {
+    const response = await fetch(`${config.public.apiBase}/api/playlists`, {
+      headers: {
+        'Authorization': `Bearer ${token.value}`
+      }
+    })
+    
+    if (response.ok) {
+      playlists.value = await response.json()
+    } else {
+      console.error('Ошибка загрузки курсов')
+    }
+  } catch (error) {
+    console.error('Ошибка:', error)
+  }
+}
+
 // Сохранение видео
 async function saveVideo() {
   try {
@@ -398,6 +761,11 @@ async function saveVideo() {
     formData.append('title', currentVideo.value.title)
     formData.append('description', currentVideo.value.description)
     formData.append('type', currentVideo.value.type)
+    
+    // Добавляем playlistId
+    if (currentVideo.value.playlistId) {
+      formData.append('playlistId', currentVideo.value.playlistId)
+    }
     
     // Если это ссылка, добавляем её
     if (currentVideo.value.type === 'link') {
@@ -678,11 +1046,100 @@ function closeModal() {
     description: '',
     type: 'file',
     source: '',
-    thumbnail: ''
+    thumbnail: '',
+    playlistId: null,
+    order: 0
   }
   thumbnailPreview.value = ''
   if (videoFile.value) videoFile.value.value = ''
   if (thumbnailFile.value) thumbnailFile.value.value = ''
+}
+
+// === Функции для работы с плейлистами ===
+
+// Сохранение плейлиста
+async function savePlaylist() {
+  try {
+    savingPlaylist.value = true
+    
+    const url = editingPlaylist.value 
+      ? `${config.public.apiBase}/api/playlists/${editingPlaylist.value._id}`
+      : `${config.public.apiBase}/api/playlists`
+    
+    const method = editingPlaylist.value ? 'PUT' : 'POST'
+    
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(currentPlaylist.value)
+    })
+    
+    if (response.ok) {
+      await loadPlaylists()
+      cancelEditPlaylist()
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      alert(`Ошибка при сохранении плейлиста: ${errorData.message || 'Неизвестная ошибка'}`)
+    }
+  } catch (error) {
+    console.error('Ошибка:', error)
+    alert('Произошла ошибка при сохранении плейлиста')
+  } finally {
+    savingPlaylist.value = false
+  }
+}
+
+// Удаление плейлиста
+async function deletePlaylist(id?: string) {
+  if (!id || !confirm('Вы уверены, что хотите удалить этот плейлист?')) return
+  
+  try {
+    const response = await fetch(`${config.public.apiBase}/api/playlists/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token.value}`
+      }
+    })
+    
+    if (response.ok) {
+      await loadPlaylists()
+      await loadVideos()
+      if (selectedPlaylist.value === id) {
+        selectedPlaylist.value = null
+      }
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      alert(`Ошибка при удалении плейлиста: ${errorData.message || 'Неизвестная ошибка'}`)
+    }
+  } catch (error) {
+    console.error('Ошибка:', error)
+    alert('Произошла ошибка при удалении плейлиста')
+  }
+}
+
+// Редактирование плейлиста
+function editPlaylist(playlist: Playlist) {
+  editingPlaylist.value = playlist
+  currentPlaylist.value = { ...playlist }
+}
+
+// Отмена редактирования плейлиста
+function cancelEditPlaylist() {
+  editingPlaylist.value = null
+  currentPlaylist.value = {
+    name: '',
+    description: '',
+    order: 0
+  }
+}
+
+// Закрытие модального окна плейлистов
+function closePlaylistModal() {
+  showPlaylistModal.value = false
+  cancelEditPlaylist()
 }
 
 function closeVideoModal() {
@@ -712,9 +1169,21 @@ function clearSource() {
   currentVideo.value.source = ''
 }
 
-// Загружаем видео при монтировании компонента
-onMounted(() => {
-  loadVideos()
+// Получить название текущего фильтра для мобильного меню
+function getMobilePlaylistLabel(): string {
+  if (selectedPlaylist.value === null) {
+    return 'Все видео'
+  } else if (selectedPlaylist.value === 'none') {
+    return 'Без курса'
+  } else {
+    const playlist = playlists.value.find(p => p._id === selectedPlaylist.value)
+    return playlist ? playlist.name : 'Выберите курс'
+  }
+}
+
+// Загружаем видео и плейлисты при монтировании компонента
+onMounted(async () => {
+  await Promise.all([loadVideos(), loadPlaylists()])
 })
 
 // Очищаем таймауты при размонтировании компонента
@@ -730,8 +1199,18 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .line-clamp-2 {
   display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -749,5 +1228,16 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   left: 0;
+}
+
+/* Улучшенное сенсорное управление */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Плавная анимация для поворота стрелки */
+.rotate-180 {
+  transform: rotate(180deg);
 }
 </style>
