@@ -491,6 +491,9 @@ interface VideoBlock {
   displayText: string
   duration: number
   images: string[]
+  imageAnimation?: string
+  transition?: string
+  scrollingText?: boolean
   audioUrl?: string
   order: number
 }

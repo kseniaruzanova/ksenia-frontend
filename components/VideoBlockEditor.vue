@@ -80,6 +80,53 @@
           />
         </div>
 
+        <!-- Анимация изображений -->
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            ✨ Анимация изображений
+          </label>
+          <select
+            v-model="block.imageAnimation"
+            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white"
+          >
+            <option value="zoom-in">🔍 Приближение (Zoom In)</option>
+            <option value="zoom-out">🔎 Отдаление (Zoom Out)</option>
+            <option value="pan-left">← Движение влево</option>
+            <option value="pan-right">→ Движение вправо</option>
+            <option value="none">⏹️ Без анимации</option>
+          </select>
+        </div>
+
+        <!-- Переход к следующему блоку -->
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            🎞️ Переход к следующему блоку
+          </label>
+          <select
+            v-model="block.transition"
+            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white"
+          >
+            <option value="fade">🌅 Плавное затухание (Fade)</option>
+            <option value="dissolve">💫 Растворение (Dissolve)</option>
+            <option value="wipe">📱 Смахивание (Wipe)</option>
+            <option value="none">⏹️ Без перехода</option>
+          </select>
+        </div>
+
+        <!-- Бегущий текст -->
+        <div class="mb-4">
+          <label class="flex items-center cursor-pointer">
+            <input
+              v-model="block.scrollingText"
+              type="checkbox"
+              class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-4 focus:ring-purple-100 transition"
+            />
+            <span class="ml-3 text-sm font-semibold text-gray-700">
+              📜 Бегущий текст (анимация текста справа налево)
+            </span>
+          </label>
+        </div>
+
         <!-- Загрузка изображений -->
         <div class="mb-4">
           <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -250,6 +297,9 @@ interface VideoBlock {
   displayText: string
   duration: number
   images: string[]
+  imageAnimation?: string
+  transition?: string
+  scrollingText?: boolean
   audioUrl?: string
   order: number
 }
