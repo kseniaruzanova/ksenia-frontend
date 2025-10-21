@@ -130,13 +130,18 @@ definePageMeta({
 
 const route = useRoute()
 const config = useRuntimeConfig()
-const router = useRouter()
 const customerId = computed(() => route.params.id)
 
 const customer = ref(null)
 const loading = ref(false)
 const error = ref('')
 const showFullToken = ref(false)
+
+const token = useCookie('bearer-token', {
+  maxAge: 60 * 60 * 16,
+  path: '/',
+  sameSite: 'lax'
+})
 
 // Получение данных кастомера
 async function fetchCustomerData() {
@@ -150,19 +155,10 @@ async function fetchCustomerData() {
   error.value = ''
 
   try {
-    // Проверяем наличие API ключа
-    const apiKey = config.public.apiKey
-    if (!apiKey) {
-      throw new Error('API ключ не найден. Проверьте файл .env')
-    }
-
-    console.log('Отправляем запрос для кастомера:', customerId.value)
-    console.log('API ключ:', apiKey ? 'Установлен' : 'Отсутствует')
-
     const response = await fetch(`${config.public.apiBase}/api/customers/get-by-id`, {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
+        'Authorization': `Bearer ${token.value}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

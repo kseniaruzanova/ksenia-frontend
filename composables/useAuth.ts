@@ -5,6 +5,7 @@ interface AuthUser {
   role: string;
   login?: string; // для админа
   username?: string; // для кастомера
+  tariff: string;
 }
 
 export const useAuth = () => {
@@ -17,6 +18,7 @@ export const useAuth = () => {
     try {
       // Декодируем токен, чтобы получить данные пользователя
       const decoded = jwtDecode<any>(tokenCookie.value);
+
       return {
         // Ищем ID в полях customerId ( для кастомера) или id (для админа).
         // Это делает логику более гибкой.
@@ -24,10 +26,10 @@ export const useAuth = () => {
         role: decoded.role,
         login: decoded.login,
         username: decoded.username,
+        tariff: decoded.tariff
       };
     } catch (e) {
       console.error('Invalid token:', e);
-      // Если токен невалидный, очищаем его
       tokenCookie.value = undefined;
       return null;
     }
@@ -35,6 +37,8 @@ export const useAuth = () => {
   
   const isAdmin = computed(() => user.value?.role === 'admin');
   const isCustomer = computed(() => user.value?.role === 'customer');
+  const tariff = user.value?.tariff;
+  const username = user.value?.username;
 
-  return { user, isAdmin, isCustomer };
+  return { user, isAdmin, isCustomer, tariff, username };
 }; 

@@ -12,83 +12,128 @@
           </p>
         </div>
 
+        <template v-if="isCustomer">
+          <!-- Информация о текущей подписке -->
+          <div class="mb-6"> 
+            <div
+              class="w-full rounded-xl shadow-md p-5 text-white flex flex-col items-center justify-center text-center"
+              :class="{
+                'bg-gradient-to-r from-gray-400 to-gray-500': tariff === 'none',
+                'bg-gradient-to-r from-blue-500 to-blue-600': tariff === 'basic',
+                'bg-gradient-to-r from-green-500 to-green-600': tariff === 'pro'
+              }"
+            >
+              <div
+                class="w-12 h-12 rounded-full flex items-center justify-center mb-3"
+                :class="{
+                  'bg-gray-300': tariff === 'none',
+                  'bg-blue-400': tariff === 'basic',
+                  'bg-green-400': tariff === 'pro'
+                }"
+              >
+                <span class="text-xl">
+                  <span v-if="tariff === 'none'">🚫</span>
+                  <span v-else-if="tariff === 'basic'">⭐</span>
+                  <span v-else-if="tariff === 'pro'">🌱</span>
+                </span>
+              </div>
+
+              <p class="text-sm opacity-80" v-if="tariff !== 'none'">Текущий тариф</p>
+              <p class="text-2xl font-bold leading-snug mb-2" v-if="tariff !== 'none'">{{ tariffText }}</p>
+              
+              <div v-if="tariff === 'none'" class="mt-2">
+                <p class="text-xl font-bold mb-2">Ваш кабинет заблокирован</p>
+                <p class="text-sm mb-3">Все функции и база подписчиков подлежат автоудалению через 10 дней</p>
+                <a 
+                  href="/subscription" 
+                  class="inline-block bg-white text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  Оплатить подписку
+                </a>
+              </div>
+            </div>
+          </div>
+        </template>
+
         <!-- Статистика пользователей -->
-        <div v-if="loading" class="text-center">
-          <p class="text-gray-500">Загрузка статистики...</p>
-        </div>
-
-        <div v-else-if="stats" class="mb-8">
-          <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Статистика ваших пользователей</h2>
-
-          <!-- Основные метрики -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
-              <div class="flex items-center">
-                <div class="flex-1">
-                  <p class="text-blue-100 text-sm font-medium">ваша БАЗА пользователей</p>
-                  <p class="text-3xl font-bold">{{ stats.totalUsers }}</p>
+        <template v-if="tariff!='none'">
+          <div v-if="loading" class="text-center">
+            <p class="text-gray-500">Загрузка статистики...</p>
+          </div>
+          
+          <div v-else-if="stats" class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Статистика ваших пользователей</h2>
+            
+            <!-- Основные метрики -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+                <div class="flex items-center">
+                  <div class="flex-1">
+                    <p class="text-blue-100 text-sm font-medium">ваша БАЗА пользователей</p>
+                    <p class="text-3xl font-bold">{{ stats.totalUsers }}</p>
+                  </div>
+                  <div class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center">
+                    <span class="text-2xl">👥</span>
+                  </div>
                 </div>
-                <div class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center">
-                  <span class="text-2xl">👥</span>
+              </div>
+              
+              <!-- <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+                <div class="flex items-center">
+                  <div class="flex-1">
+                    <p class="text-green-100 text-sm font-medium">Активных сегодня</p>
+                    <p class="text-3xl font-bold">{{ stats.todayActive }}</p>
+                  </div>
+                  <div class="w-12 h-12 bg-green-400 rounded-full flex items-center justify-center">
+                    <span class="text-2xl">⚡</span>
+                  </div>
+                </div>
+              </div>
+              -->
+              <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+                <div class="flex items-center">
+                  <div class="flex-1">
+                    <p class="text-purple-100 text-sm font-medium">Новых за неделю</p>
+                    <p class="text-3xl font-bold">{{ stats.weeklyNew }}</p>
+                  </div>
+                  <div class="w-12 h-12 bg-purple-400 rounded-full flex items-center justify-center">
+                    <span class="text-2xl">🆕</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
-              <div class="flex items-center">
-                <div class="flex-1">
-                  <p class="text-green-100 text-sm font-medium">Активных сегодня</p>
-                  <p class="text-3xl font-bold">{{ stats.todayActive }}</p>
-                </div>
-                <div class="w-12 h-12 bg-green-400 rounded-full flex items-center justify-center">
-                  <span class="text-2xl">⚡</span>
+            <!-- Дополнительные метрики -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-6 text-white">
+                <div class="flex items-center">
+                  <div class="flex-1">
+                    <p class="text-yellow-100 text-sm font-medium">Вы отправили рассылок</p>
+                    <p class="text-3xl font-bold">{{ stats.totalBroadcasts }}</p>
+                  </div>
+                  <div class="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <span class="text-2xl">📧</span>
+                  </div>
                 </div>
               </div>
-            </div>
-             -->
-            <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
-              <div class="flex items-center">
-                <div class="flex-1">
-                  <p class="text-purple-100 text-sm font-medium">Новых за неделю</p>
-                  <p class="text-3xl font-bold">{{ stats.weeklyNew }}</p>
-                </div>
-                <div class="w-12 h-12 bg-purple-400 rounded-full flex items-center justify-center">
-                  <span class="text-2xl">🆕</span>
+              
+              <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg p-6 text-white">
+                <div class="flex items-center">
+                  <div class="flex-1">
+                    <p class="text-emerald-100 text-sm font-medium">Вы заработали</p>
+                    <p class="text-3xl font-bold">{{ formatMoney(stats.totalEarnings) }} ₽</p>
+                  </div>
+                  <div class="w-12 h-12 bg-emerald-400 rounded-full flex items-center justify-center">
+                    <span class="text-2xl">💰</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- Дополнительные метрики -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-6 text-white">
-              <div class="flex items-center">
-                <div class="flex-1">
-                  <p class="text-yellow-100 text-sm font-medium">Вы отправили рассылок</p>
-                  <p class="text-3xl font-bold">{{ stats.totalBroadcasts }}</p>
-                </div>
-                <div class="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center">
-                  <span class="text-2xl">📧</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg p-6 text-white">
-              <div class="flex items-center">
-                <div class="flex-1">
-                  <p class="text-emerald-100 text-sm font-medium">Вы заработали</p>
-                  <p class="text-3xl font-bold">{{ formatMoney(stats.totalEarnings) }} ₽</p>
-                </div>
-                <div class="w-12 h-12 bg-emerald-400 rounded-full flex items-center justify-center">
-                  <span class="text-2xl">💰</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </template>
 
         <!-- Активные функции тарифа -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8" v-if="tariff !== 'none'">
           <h2 class="text-2xl font-semibold text-gray-800 mb-6">Ваши активные функции тарифа:</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-3">
@@ -155,7 +200,7 @@
         </div>
 
         <!-- Встроенные продукты -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8" v-if="tariff !== 'none'">
           <h2 class="text-2xl font-semibold text-gray-800 mb-6">Вы используете встроенные продукты:</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-3">
@@ -231,11 +276,27 @@
 </template>
 
 <script setup>
+
+const { tariff, isCustomer } = useAuth();
+const tariffText = computed(() => {
+  switch (tariff) {
+    case 'none':
+      return 'Нет подписки'
+    case 'basic':
+      return 'БАЗОВЫЙ ДОСТУП'
+    case 'pro':
+      return 'РОСТ'
+    default:
+      return 'Не указан'
+  }
+})
 const router = useRouter()
 const config = useRuntimeConfig()
 const token = useCookie('bearer-token')
 const loading = ref(true)
 const stats = ref(null)
+
+refreshToken()
 
 // Форматирование денежных сумм
 function formatMoney(amount) {
@@ -311,8 +372,46 @@ function handleLogout() {
   router.push('/login')
 }
 
+async function refreshToken() {
+  try {
+    // Берем текущий токен из куки
+    const cookie = useCookie('bearer-token')
+    const oldToken = cookie.value
+
+    if (!oldToken) {
+      throw new Error('Нет сохранённого токена')
+    }
+
+    const response = await fetch(`${config.public.apiBase}/api/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${oldToken}`
+      }
+      // body не нужен, бэк работает только с заголовком
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Ошибка при обновлении токена')
+    }
+
+    // Сохраняем новый токен в куки
+    cookie.value = data.token
+
+    console.log('✅ Token refreshed', data)
+
+    // Можно обновить user state или просто редиректнуть
+    router.push('/')
+  } catch (e) {
+    
+  }
+}
+
+
 // Загружаем статистику при монтировании компонента
 onMounted(() => {
   fetchUserStats()
 })
-</script>
+</script> 

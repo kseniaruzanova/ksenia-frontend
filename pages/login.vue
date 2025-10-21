@@ -82,12 +82,19 @@ async function handleLogin() {
       throw new Error(data.message || 'Ошибка при входе')
     }
 
-    // Сохраняем токен в куки
-    const cookie = useCookie('bearer-token')
+    // Сохраняем токен в куки с правильными параметрами
+    const cookie = useCookie('bearer-token', {
+      maxAge: 60 * 60 * 16, // 8 часов
+      path: '/',
+      sameSite: 'lax'
+    })
     cookie.value = data.token
 
+    console.log('Токен сохранен:', data.token ? 'да' : 'нет')
+    console.log('Роль пользователя:', data.role)
+
     // Перенаправляем на главную
-    router.push('/')
+    await router.push('/')
   } catch (e) {
     error.value = e.message || 'Произошла ошибка при входе'
   } finally {

@@ -1,330 +1,287 @@
 <template>
   <div>
     <Navbar />
-    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-7xl mx-auto">
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900">Управление пользователями</h1>
-          
-          <!-- Поиск пользователя -->
-          <div class="mt-6">
-            <div class="flex space-x-4">
-              <input
-                v-model="searchChatId"
-                type="text"
-                placeholder="Введите chat_id пользователя"
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-md"
-              />
-              <button
-                @click="searchUser"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Найти
-              </button>
+    <template v-if="tariff=='none'">
+      <TariffRestrictionMessage />
+    </template>
+    <template v-else>
+      <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+          <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Управление пользователями</h1>
+            
+            <!-- Поиск пользователя -->
+            <div class="mt-6">
+              <div class="flex space-x-4">
+                <input
+                  v-model="searchChatId"
+                  type="text"
+                  placeholder="Введите chat_id пользователя"
+                  class="flex-1 px-4 py-2 border border-gray-300 rounded-md"
+                />
+                <button
+                  @click="searchUser"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Найти
+                </button>
+              </div>
             </div>
-          </div>
 
-          <!-- Результат поиска -->
-          <div v-if="searchedUser" class="mt-6 bg-white p-6 rounded-lg shadow">
-            <h2 class="text-xl font-semibold mb-4">Информация о пользователе</h2>
-            <div class="space-y-4">
-              <div class="border-b pb-4">
-                <p><span class="font-medium">Chat ID:</span> {{ searchedUser.chat_id }}</p>
-                <p><span class="font-medium">Customer ID:</span> {{ searchedUser.customerId || 'Не указан' }}</p>
-                <p><span class="font-medium">Состояние:</span> {{ searchedUser.state }}</p>
-                <p><span class="font-medium">День рождения:</span> {{ searchedUser.birthday }}</p>
-                <p v-if="searchedUser.createdAt"><span class="font-medium">Дата создания:</span> {{ formatDate(searchedUser.createdAt) }}</p>
-                <p v-if="searchedUser.updatedAt"><span class="font-medium">Последнее обновление:</span> {{ formatDate(searchedUser.updatedAt) }}</p>
+            <!-- Результат поиска -->
+            <div v-if="searchedUser" class="mt-6 bg-white p-6 rounded-lg shadow">
+              <h2 class="text-xl font-semibold mb-4">Информация о пользователе</h2>
+              <div class="space-y-4">
+                <div class="border-b pb-4">
+                  <p><span class="font-medium">Chat ID:</span> {{ searchedUser.chat_id }}</p>
+                  <p><span class="font-medium">Customer ID:</span> {{ searchedUser.customerId || 'Не указан' }}</p>
+                  <p><span class="font-medium">Состояние:</span> {{ searchedUser.state }}</p>
+                  <p><span class="font-medium">День рождения:</span> {{ searchedUser.birthday || 'Не указано' }}</p>
+                  <p v-if="searchedUser.birthTime"><span class="font-medium">Время рождения:</span> {{ searchedUser.birthTime }}</p>
+                  <p v-if="searchedUser.city_name"><span class="font-medium">Место рождения:</span> {{ searchedUser.city_name }}</p>
+                  <p v-if="searchedUser.latitude && searchedUser.longitude">
+                    <span class="font-medium">Координаты:</span> {{ searchedUser.latitude }}, {{ searchedUser.longitude }}
+                  </p>
+                  <p v-if="searchedUser.timezone !== undefined"><span class="font-medium">Часовой пояс:</span> UTC{{ searchedUser.timezone >= 0 ? '+' : '' }}{{ searchedUser.timezone }}</p>
+                  <p v-if="searchedUser.question"><span class="font-medium">Вопрос:</span> {{ searchedUser.question }}</p>
+                  <p v-if="searchedUser.createdAt"><span class="font-medium">Дата создания:</span> {{ formatDate(searchedUser.createdAt) }}</p>
+                  <p v-if="searchedUser.updatedAt"><span class="font-medium">Последнее обновление:</span> {{ formatDate(searchedUser.updatedAt) }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Список всех пользователей -->
+            <div class="mt-8">
+              <!-- Статистика для админов -->
+              <div v-if="adminStats" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="flex items-center">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-blue-900">Всего пользователей</p>
+                      <p class="text-2xl font-bold text-blue-700">{{ adminStats.totalUsers }}</p>
+                    </div>
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span class="text-white text-xs">👥</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <div class="flex items-center">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-green-900">Всего кастомеров</p>
+                      <p class="text-2xl font-bold text-green-700">{{ adminStats.totalCustomers }}</p>
+                    </div>
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <span class="text-white text-xs">🏢</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <div class="flex items-center">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-yellow-900">Без кастомера</p>
+                      <p class="text-2xl font-bold text-yellow-700">{{ adminStats.usersWithoutCustomer?.length || 0 }}</p>
+                    </div>
+                    <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                      <span class="text-white text-xs">⚠️</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <!-- Диалог -->
-              <div class="space-y-6">
-                <div class="bg-gray-50 p-4 rounded-lg">
-                  <p class="font-medium text-gray-700">Ответ 1:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.answer_1 }}</p>
-                </div>
-
-                <div v-if="searchedUser.usermessage2" class="bg-blue-50 p-4 rounded-lg">
-                  <p class="font-medium text-blue-700">Сообщение пользователя 2:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.usermessage2 }}</p>
-                </div>
-
-                <div v-if="searchedUser.answer_2" class="bg-gray-50 p-4 rounded-lg">
-                  <p class="font-medium text-gray-700">Ответ 2:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.answer_2 }}</p>
-                </div>
-
-                <div v-if="searchedUser.usermessage3" class="bg-blue-50 p-4 rounded-lg">
-                  <p class="font-medium text-blue-700">Сообщение пользователя 3:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.usermessage3 }}</p>
-                </div>
-
-                <div v-if="searchedUser.answer_3" class="bg-gray-50 p-4 rounded-lg">
-                  <p class="font-medium text-gray-700">Ответ 3:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.answer_3 }}</p>
-                </div>
-
-                <div v-if="searchedUser.usermessage4" class="bg-blue-50 p-4 rounded-lg">
-                  <p class="font-medium text-blue-700">Сообщение пользователя 4:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.usermessage4 }}</p>
-                </div>
-
-                <div v-if="searchedUser.answer_4" class="bg-gray-50 p-4 rounded-lg">
-                  <p class="font-medium text-gray-700">Ответ 4:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.answer_4 }}</p>
-                </div>
-
-                <div v-if="searchedUser.usermessage5" class="bg-blue-50 p-4 rounded-lg">
-                  <p class="font-medium text-blue-700">Сообщение пользователя 5:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.usermessage5 }}</p>
-                </div>
-
-                <div v-if="searchedUser.answer_5" class="bg-gray-50 p-4 rounded-lg">
-                  <p class="font-medium text-gray-700">Ответ 5:</p>
-                  <div class="mt-2 whitespace-pre-wrap" v-html="searchedUser.answer_5"></div>
-                </div>
-
-                <div v-if="searchedUser.usermessage6" class="bg-blue-50 p-4 rounded-lg">
-                  <p class="font-medium text-blue-700">Сообщение пользователя 6:</p>
-                  <p class="mt-2 whitespace-pre-wrap">{{ searchedUser.usermessage6 }}</p>
-                </div>
-
-                <div v-if="searchedUser.answer_6" class="bg-gray-50 p-4 rounded-lg">
-                  <p class="font-medium text-gray-700">Ответ 6:</p>
-                  <div class="mt-2 whitespace-pre-wrap" v-html="searchedUser.answer_6"></div>
-                </div>
-
-                <!-- История сообщений пользователя -->
-                <div v-if="searchedUser.messages && searchedUser.messages.length > 0" class="mt-8 bg-blue-50 p-6 rounded-lg">
-                  <h3 class="text-lg font-semibold text-blue-900 mb-4">История сообщений пользователя</h3>
-                  <div class="space-y-3">
-                    <div 
-                      v-for="(message, index) in searchedUser.messages" 
-                      :key="index"
-                      class="bg-white p-3 rounded shadow-sm"
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold">Все пользователи</h2>
+                
+                <!-- Настройки отображения -->
+                <div class="flex items-center space-x-4">
+                  <div class="flex items-center space-x-2">
+                    <label class="text-sm text-gray-700">Показать:</label>
+                    <select 
+                      v-model="pageSize" 
+                      @change="changePageSize"
+                      class="px-3 py-1 border border-gray-300 rounded-md text-sm"
                     >
-                      <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-500">Сообщение #{{ index + 1 }}</span>
-                        <span class="text-xs text-gray-400">
-                          {{ message.timestamp ? formatDate(message.timestamp) : 'Время не указано' }}
-                        </span>
-                      </div>
-                      <p class="mt-2 text-gray-700 whitespace-pre-wrap">{{ typeof message === 'string' ? message : message.text || 'Пустое сообщение' }}</p>
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                    <span class="text-sm text-gray-700">на странице</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-white shadow overflow-hidden rounded-lg">
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th 
+                          @click="setSortField('chat_id')"
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        >
+                          <div class="flex items-center space-x-1">
+                            <span>Chat ID</span>
+                            <span v-if="sortField === 'chat_id'" class="text-indigo-600">
+                              {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                            </span>
+                          </div>
+                        </th>
+                        <th 
+                          @click="setSortField('customerId')"
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        >
+                          <div class="flex items-center space-x-1">
+                            <span>Customer ID</span>
+                            <span v-if="sortField === 'customerId'" class="text-indigo-600">
+                              {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                            </span>
+                          </div>
+                        </th>
+                        <th 
+                          @click="setSortField('state')"
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        >
+                          <div class="flex items-center space-x-1">
+                            <span>Состояние</span>
+                            <span v-if="sortField === 'state'" class="text-indigo-600">
+                              {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                            </span>
+                          </div>
+                        </th>
+                        <th 
+                          @click="setSortField('birthday')"
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        >
+                          <div class="flex items-center space-x-1">
+                            <span>День рождения</span>
+                            <span v-if="sortField === 'birthday'" class="text-indigo-600">
+                              {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                            </span>
+                          </div>
+                        </th>
+                        <th 
+                          @click="setSortField('city_name')"
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        >
+                          <div class="flex items-center space-x-1">
+                            <span>Место рождения</span>
+                            <span v-if="sortField === 'city_name'" class="text-indigo-600">
+                              {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                            </span>
+                          </div>
+                        </th>
+                        <th 
+                          @click="setSortField('createdAt')"
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        >
+                          <div class="flex items-center space-x-1">
+                            <span>Дата создания</span>
+                            <span v-if="sortField === 'createdAt'" class="text-indigo-600">
+                              {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                            </span>
+                          </div>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <tr v-for="user in sortedUsers" :key="user._id">
+                        <td class="px-6 py-4 whitespace-nowrap">{{ user.chat_id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="text-xs font-mono">{{ user.customerId || 'Не указан' }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span :class="{
+                            'px-2 py-1 text-xs rounded-full': true,
+                            'bg-green-100 text-green-800': user.state === 'completed',
+                            'bg-blue-100 text-blue-800': user.state === 'waiting',
+                            'bg-gray-100 text-gray-800': user.state === 'new_chat'
+                          }">
+                            {{ user.state }}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ user.birthday || '—' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span v-if="user.city_name" class="text-sm text-gray-900">{{ user.city_name }}</span>
+                          <span v-else class="text-sm text-gray-400">—</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {{ user.createdAt ? formatDate(user.createdAt) : 'Не указано' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button
+                            @click="viewUserDetails(user.chat_id)"
+                            class="text-blue-600 hover:text-blue-900"
+                          >
+                            Подробнее
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <!-- Информация о пагинации -->
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                  <div class="flex-1 flex justify-between items-center">
+                    <div>
+                      <p class="text-sm text-gray-700">
+                        Показано {{ startIndex + 1 }}-{{ endIndex }} из {{ filteredUsers.length }} пользователей
+                        (Страница {{ currentPage }} из {{ totalDisplayPages }})
+                      </p>
+                    </div>
+                    <div class="flex space-x-2">
+                      <button
+                        @click="changePage(currentPage - 1)"
+                        :disabled="currentPage === 1"
+                        :class="[
+                          'relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md',
+                          currentPage === 1 
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                        ]"
+                      >
+                        Назад
+                      </button>
+                      <button
+                        @click="changePage(currentPage + 1)"
+                        :disabled="currentPage === totalDisplayPages"
+                        :class="[
+                          'relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md',
+                          currentPage === totalDisplayPages
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                        ]"
+                      >
+                        Вперед
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Список всех пользователей -->
-          <div class="mt-8">
-            <!-- Статистика для админов -->
-            <div v-if="adminStats" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div class="flex items-center">
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-blue-900">Всего пользователей</p>
-                    <p class="text-2xl font-bold text-blue-700">{{ adminStats.totalUsers }}</p>
-                  </div>
-                  <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span class="text-white text-xs">👥</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                <div class="flex items-center">
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-green-900">Всего кастомеров</p>
-                    <p class="text-2xl font-bold text-green-700">{{ adminStats.totalCustomers }}</p>
-                  </div>
-                  <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span class="text-white text-xs">🏢</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                <div class="flex items-center">
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-yellow-900">Без кастомера</p>
-                    <p class="text-2xl font-bold text-yellow-700">{{ adminStats.usersWithoutCustomer?.length || 0 }}</p>
-                  </div>
-                  <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <span class="text-white text-xs">⚠️</span>
-                  </div>
-                </div>
-              </div>
+            <!-- Ошибка -->
+            <div v-if="error" class="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
+              {{ error }}
             </div>
-
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-2xl font-bold">Все пользователи</h2>
-              
-              <!-- Настройки отображения -->
-              <div class="flex items-center space-x-4">
-                <div class="flex items-center space-x-2">
-                  <label class="text-sm text-gray-700">Показать:</label>
-                  <select 
-                    v-model="pageSize" 
-                    @change="changePageSize"
-                    class="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                  </select>
-                  <span class="text-sm text-gray-700">на странице</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-white shadow overflow-hidden rounded-lg">
-              <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th 
-                        @click="setSortField('chat_id')"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      >
-                        <div class="flex items-center space-x-1">
-                          <span>Chat ID</span>
-                          <span v-if="sortField === 'chat_id'" class="text-indigo-600">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th 
-                        @click="setSortField('customerId')"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      >
-                        <div class="flex items-center space-x-1">
-                          <span>Customer ID</span>
-                          <span v-if="sortField === 'customerId'" class="text-indigo-600">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th 
-                        @click="setSortField('state')"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      >
-                        <div class="flex items-center space-x-1">
-                          <span>Состояние</span>
-                          <span v-if="sortField === 'state'" class="text-indigo-600">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th 
-                        @click="setSortField('birthday')"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      >
-                        <div class="flex items-center space-x-1">
-                          <span>День рождения</span>
-                          <span v-if="sortField === 'birthday'" class="text-indigo-600">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th 
-                        @click="setSortField('createdAt')"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      >
-                        <div class="flex items-center space-x-1">
-                          <span>Дата создания</span>
-                          <span v-if="sortField === 'createdAt'" class="text-indigo-600">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
-                    <tr v-for="user in sortedUsers" :key="user._id">
-                      <td class="px-6 py-4 whitespace-nowrap">{{ user.chat_id }}</td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-xs font-mono">{{ user.customerId || 'Не указан' }}</span>
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap">{{ user.state }}</td>
-                      <td class="px-6 py-4 whitespace-nowrap">{{ user.birthday }}</td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ user.createdAt ? formatDate(user.createdAt) : 'Не указано' }}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <button
-                          @click="viewUserDetails(user.chat_id)"
-                          class="text-blue-600 hover:text-blue-900"
-                        >
-                          Подробнее
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              
-              <!-- Информация о пагинации -->
-              <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                <div class="flex-1 flex justify-between items-center">
-                  <div>
-                    <p class="text-sm text-gray-700">
-                      Показано {{ startIndex + 1 }}-{{ endIndex }} из {{ filteredUsers.length }} пользователей
-                      (Страница {{ currentPage }} из {{ totalDisplayPages }})
-                    </p>
-                  </div>
-                  <div class="flex space-x-2">
-                    <button
-                      @click="changePage(currentPage - 1)"
-                      :disabled="currentPage === 1"
-                      :class="[
-                        'relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md',
-                        currentPage === 1 
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      ]"
-                    >
-                      Назад
-                    </button>
-                    <button
-                      @click="changePage(currentPage + 1)"
-                      :disabled="currentPage === totalDisplayPages"
-                      :class="[
-                        'relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md',
-                        currentPage === totalDisplayPages
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
-                      ]"
-                    >
-                      Вперед
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Ошибка -->
-          <div v-if="error" class="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
-            {{ error }}
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+const { tariff } = useAuth();
 
 const searchChatId = ref('')
 const searchedUser = ref(null)
 const users = ref([])
 const currentPage = ref(1)
-const totalPages = ref(1)
 const error = ref('')
 const pageSize = ref(50)
 const sortField = ref('')

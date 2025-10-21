@@ -140,9 +140,17 @@ definePageMeta({
   middleware: "admin",
 });
 
-const token = useCookie('bearer-token')
+const token = useCookie('bearer-token', {
+  maxAge: 60 * 60 * 16,
+  path: '/',
+  sameSite: 'lax'
+})
 const router = useRouter()
 const config = useRuntimeConfig()
+
+// Отладка при загрузке страницы
+console.log('Страница customers загружена')
+console.log('Токен при загрузке:', token.value ? 'присутствует' : 'отсутствует')
 
 const formData = ref({
   username: '',
@@ -163,6 +171,17 @@ async function fetchCustomers() {
   loadingCustomers.value = true
   customersError.value = ''
 
+  // Проверяем наличие токена
+  if (!token.value) {
+    customersError.value = 'Токен авторизации не найден. Пожалуйста, войдите снова.'
+    console.error('Токен отсутствует:', token.value)
+    router.push('/login')
+    loadingCustomers.value = false
+    return
+  }
+
+  console.log('Токен для запроса:', token.value ? 'присутствует' : 'отсутствует')
+
   try {
     const response = await fetch(`${config.public.apiBase}/api/customers`, {
       method: 'GET',
@@ -174,14 +193,17 @@ async function fetchCustomers() {
 
     if (!response.ok) {
       if (response.status === 401) {
+        token.value = null
         router.push('/login')
         throw new Error('Сессия истекла. Пожалуйста, войдите снова.')
       }
-      throw new Error(`Ошибка ${response.status}: ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `Ошибка ${response.status}: ${response.statusText}`)
     }
 
     const data = await response.json()
     customers.value = Array.isArray(data) ? data : data.customers || []
+    console.log('Загружено кастомеров:', customers.value.length)
   } catch (err) {
     customersError.value = err.message || 'Не удалось загрузить список кастомеров'
     console.error('Ошибка загрузки кастомеров:', err)
@@ -225,6 +247,15 @@ async function createCustomer() {
   error.value = ''
   result.value = null
 
+  // Проверяем наличие токена
+  if (!token.value) {
+    error.value = 'Токен авторизации не найден. Пожалуйста, войдите снова.'
+    console.error('Токен отсутствует при создании кастомера')
+    router.push('/login')
+    loading.value = false
+    return
+  }
+
   try {
     const response = await fetch(`${config.public.apiBase}/api/customers`, {
       method: 'POST',
@@ -239,6 +270,7 @@ async function createCustomer() {
 
     if (!response.ok) {
       if (response.status === 401) {
+        token.value = null
         router.push('/login')
       }
       throw new Error(data.message || 'Не удалось создать кастомера')
@@ -246,6 +278,9 @@ async function createCustomer() {
 
     result.value = data
     formData.value = { username: '', botToken: '' } // Сброс формы
+    
+    // Обновляем список кастомеров после создания
+    await fetchCustomers()
   } catch (err) {
     error.value = err.message
   } finally {
