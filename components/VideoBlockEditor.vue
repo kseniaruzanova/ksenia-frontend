@@ -91,7 +91,7 @@
               :key="imgIndex"
               class="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-200"
             >
-              <img :src="image" alt="Preview" class="w-full h-full object-cover" />
+\              <img :src="getImageUrl(image)" alt="Preview" class="w-full h-full object-cover" />
               <button
                 @click="removeImage(index, imgIndex)"
                 class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
@@ -293,6 +293,24 @@ const canGenerateVideo = computed(() => {
   )
 })
 
+// Функция для получения полного URL изображения
+function getImageUrl(imagePath: string): string {
+  // Если путь уже начинается с http/https, возвращаем как есть (blob URLs)
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('blob:')) {
+    return imagePath
+  }
+  // Иначе добавляем базовый URL
+  return `${config.public.apiBase}${imagePath}`
+}
+
+// Функция для получения полного URL музыки
+function getMusicUrl(musicPath: string): string {
+  if (musicPath.startsWith('http://') || musicPath.startsWith('https://') || musicPath.startsWith('blob:')) {
+    return musicPath
+  }
+  return `${config.public.apiBase}${musicPath}`
+}
+
 async function handleImageUpload(event: Event, blockIndex: number) {
   const files = (event.target as HTMLInputElement).files
   if (!files || files.length === 0) return
@@ -315,7 +333,8 @@ async function handleImageUpload(event: Event, blockIndex: number) {
 
     if (response.ok) {
       const data = await response.json()
-      blocks.value[blockIndex].images.push(...data.imageUrls.map((url: string) => `${config.public.apiBase}${url}`))
+      // Сохраняем только относительные пути, без домена
+      blocks.value[blockIndex].images.push(...data.imageUrls)
     } else {
       console.error('Failed to upload images')
       alert('Не удалось загрузить изображения')
@@ -352,7 +371,8 @@ async function handleMusicUpload(event: Event) {
 
     if (response.ok) {
       const data = await response.json()
-      backgroundMusic.value = `${config.public.apiBase}${data.audioUrl}`
+      // Сохраняем только относительный путь, без домена
+      backgroundMusic.value = data.audioUrl
     } else {
       console.error('Failed to upload audio')
       alert('Не удалось загрузить аудио')
