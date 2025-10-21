@@ -90,8 +90,62 @@
 
           <!-- Правая панель - Ввод и действия -->
           <div class="lg:col-span-2 order-1 lg:order-2">
-            <!-- Блок анимации генерации -->
-            <div v-if="generatingScenario" class="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
+            <!-- Блок анимации генерации блоков -->
+            <div v-if="generatingBlocks" class="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
+              <div class="text-center">
+                <div class="mb-8">
+                  <div class="relative inline-block">
+                    <div class="w-24 h-24 border-8 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                      <svg class="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">
+                  🎬 ИИ создает блоки для видео...
+                </h2>
+                
+                <p class="text-base sm:text-lg text-gray-600 mb-6">
+                  Генерирую 5 блоков по 10 секунд для вашего видео
+                </p>
+                
+                <div class="max-w-md mx-auto space-y-3">
+                  <div class="flex items-center text-left p-3 bg-purple-50 rounded-lg">
+                    <div class="flex-shrink-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">1</div>
+                    <p class="ml-3 text-sm text-gray-700">Анализ вашего промпта</p>
+                  </div>
+                  <div class="flex items-center text-left p-3 bg-purple-50 rounded-lg">
+                    <div class="flex-shrink-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">2</div>
+                    <p class="ml-3 text-sm text-gray-700">Создание текстов для озвучки</p>
+                  </div>
+                  <div class="flex items-center text-left p-3 bg-purple-50 rounded-lg">
+                    <div class="flex-shrink-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">3</div>
+                    <p class="ml-3 text-sm text-gray-700">Подготовка структуры видео</p>
+                  </div>
+                </div>
+                
+                <p class="text-sm text-gray-500 mt-8">
+                  Это займет 15-30 секунд...
+                </p>
+              </div>
+            </div>
+
+            <!-- Редактор блоков видео -->
+            <VideoBlockEditor
+              v-else-if="showBlockEditor && editingReel"
+              :initialBlocks="editingReel.blocks || []"
+              :initialAudioSettings="editingReel.audioSettings"
+              :initialBackgroundMusic="editingReel.backgroundMusic"
+              @back="exitBlockEditor"
+              @save="saveVideoBlocks"
+              @generate-video="generateFinalVideo"
+            />
+
+            <!-- Блок анимации генерации сценария -->
+            <div v-else-if="generatingScenario" class="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
               <div class="text-center">
                 <div class="mb-8">
                   <div class="relative inline-block">
@@ -200,11 +254,51 @@
                   </div>
                 </div>
 
-                <div v-if="selectedReel.videoUrl" class="p-4 bg-green-50 rounded-xl border-2 border-green-200">
-                  <p class="text-sm font-medium text-green-700 mb-2">🎥 Видео:</p>
-                  <a :href="selectedReel.videoUrl" target="_blank" class="text-green-600 hover:text-green-700 font-semibold underline">
-                    Открыть видео
-                  </a>
+                <div v-if="selectedReel.videoUrl" class="border-2 border-green-200 rounded-xl overflow-hidden">
+                  <div class="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-3">
+                    <p class="text-white font-semibold flex items-center">
+                      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      Готовое видео
+                    </p>
+                  </div>
+                  <div class="p-6 bg-white">
+                    <video 
+                      v-if="selectedReel.videoUrl.endsWith('.mp4')"
+                      :src="selectedReel.videoUrl" 
+                      controls 
+                      class="w-full rounded-lg shadow-lg mb-4"
+                      style="max-height: 600px;"
+                    >
+                      Ваш браузер не поддерживает видео.
+                    </video>
+                    <div class="flex gap-3">
+                      <a 
+                        :href="selectedReel.videoUrl" 
+                        download
+                        class="flex-1 text-center px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
+                      >
+                        📥 Скачать видео
+                      </a>
+                      <a 
+                        :href="selectedReel.videoUrl" 
+                        target="_blank"
+                        class="flex-1 text-center px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition"
+                      >
+                        🔗 Открыть в новой вкладке
+                      </a>
+                    </div>
+                  </div>
+                  <div class="bg-green-50 px-6 py-3 border-t border-green-200">
+                    <p class="text-xs text-green-700 flex items-center">
+                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                      Видео готово к использованию
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -391,14 +485,33 @@
 </template>
 
 <script setup lang="ts">
+interface VideoBlock {
+  id: string
+  text: string
+  displayText: string
+  duration: number
+  images: string[]
+  audioUrl?: string
+  order: number
+}
+
+interface AudioSettings {
+  voiceVolume: number
+  musicVolume: number
+  voiceSpeed: number
+}
+
 interface Reel {
   id: number | string
   userId: number
   title: string
   prompt: string
   scenario?: string
+  blocks?: VideoBlock[]
+  backgroundMusic?: string
+  audioSettings?: AudioSettings
   videoUrl?: string
-  status: 'draft' | 'scenario_generated' | 'video_created'
+  status: 'draft' | 'scenario_generated' | 'blocks_created' | 'video_generating' | 'video_created'
   createdAt?: string
   updatedAt?: string
 }
@@ -415,6 +528,9 @@ const loading = ref(true)
 const processing = ref(false)
 const showCreationForm = ref(true)
 const generatingScenario = ref(false)
+const showBlockEditor = ref(false)
+const generatingBlocks = ref(false)
+const editingReel = ref<Reel | null>(null)
 
 // Модальное окно
 interface ModalData {
@@ -484,6 +600,9 @@ async function loadReels() {
         title: reel.title,
         prompt: reel.prompt,
         scenario: reel.scenario,
+        blocks: reel.blocks || [],
+        backgroundMusic: reel.backgroundMusic,
+        audioSettings: reel.audioSettings || { voiceVolume: 80, musicVolume: 30, voiceSpeed: 1.0 },
         videoUrl: reel.videoUrl,
         status: reel.status,
         createdAt: reel.createdAt,
@@ -582,15 +701,17 @@ async function generateScenario() {
   }
 }
 
-// Создание видео
+// Создание видео (генерация блоков)
 async function createVideo() {
   if (!canSubmit.value) return
   
   try {
     processing.value = true
+    generatingBlocks.value = true
+    showCreationForm.value = false
     
     // Создаем новый рилс
-    const response = await fetch(`${config.public.apiBase}/api/reels`, {
+    const createResponse = await fetch(`${config.public.apiBase}/api/reels`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.value}`,
@@ -602,12 +723,27 @@ async function createVideo() {
       })
     })
     
-    if (response.ok) {
-      const newReel = await response.json()
-      
-      // TODO: Здесь будет вызов API для создания видео с помощью ИИ
-      // Пока просто обновим статус
-      await updateReelStatus(newReel.id, 'video_created', undefined, 'https://example.com/video.mp4')
+    if (!createResponse.ok) {
+      const errorData = await createResponse.json().catch(() => ({}))
+      showModal('error', 'Ошибка создания', errorData.error || 'Не удалось создать рилс')
+      generatingBlocks.value = false
+      showCreationForm.value = true
+      return
+    }
+    
+    const newReel = await createResponse.json()
+    
+    // Генерируем блоки для видео
+    const blocksResponse = await fetch(`${config.public.apiBase}/api/reels/${newReel._id}/generate-video-blocks`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (blocksResponse.ok) {
+      const updatedReel = await blocksResponse.json()
       
       // Очищаем форму
       prompt.value = ''
@@ -616,14 +752,37 @@ async function createVideo() {
       // Обновляем список
       await loadReels()
       
-      showModal('success', 'Рилс создан', 'Генерация видео будет добавлена в следующей версии.')
+      // Открываем редактор блоков
+      editingReel.value = {
+        id: updatedReel._id,
+        userId: updatedReel.userId,
+        title: updatedReel.title,
+        prompt: updatedReel.prompt,
+        scenario: updatedReel.scenario,
+        blocks: updatedReel.blocks || [],
+        backgroundMusic: updatedReel.backgroundMusic,
+        audioSettings: updatedReel.audioSettings || { voiceVolume: 80, musicVolume: 30, voiceSpeed: 1.0 },
+        videoUrl: updatedReel.videoUrl,
+        status: updatedReel.status,
+        createdAt: updatedReel.createdAt,
+        updatedAt: updatedReel.updatedAt
+      }
+      
+      generatingBlocks.value = false
+      showBlockEditor.value = true
     } else {
-      const errorData = await response.json().catch(() => ({}))
-      showModal('error', 'Ошибка', errorData.error || 'Не удалось создать рилс')
+      const errorData = await blocksResponse.json().catch(() => ({}))
+      const errorMessage = errorData.details || errorData.error || 'Неизвестная ошибка'
+      showModal('warning', 'Частичный успех', `Рилс создан, но не удалось сгенерировать блоки.\n\nОшибка: ${errorMessage}`)
+      await loadReels()
+      generatingBlocks.value = false
+      showCreationForm.value = true
     }
   } catch (error) {
     console.error('Ошибка:', error)
     showModal('error', 'Ошибка', 'Произошла ошибка при создании видео')
+    generatingBlocks.value = false
+    showCreationForm.value = true
   } finally {
     processing.value = false
   }
@@ -689,6 +848,86 @@ function backToCreationForm() {
   showCreationForm.value = true
 }
 
+// Выход из редактора блоков
+function exitBlockEditor() {
+  showBlockEditor.value = false
+  editingReel.value = null
+  showCreationForm.value = true
+}
+
+// Сохранить изменения блоков
+async function saveVideoBlocks(data: { blocks: VideoBlock[], audioSettings: AudioSettings, backgroundMusic: string }) {
+  if (!editingReel.value) return
+  
+  try {
+    const response = await fetch(`${config.public.apiBase}/api/reels/${editingReel.value.id}/video-blocks`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    
+    if (response.ok) {
+      const updatedReel = await response.json()
+      editingReel.value = {
+        ...editingReel.value,
+        blocks: updatedReel.blocks,
+        audioSettings: updatedReel.audioSettings,
+        backgroundMusic: updatedReel.backgroundMusic
+      }
+      await loadReels()
+      showModal('success', 'Сохранено', 'Изменения успешно сохранены')
+    } else {
+      showModal('error', 'Ошибка', 'Не удалось сохранить изменения')
+    }
+  } catch (error) {
+    console.error('Ошибка:', error)
+    showModal('error', 'Ошибка', 'Произошла ошибка при сохранении')
+  }
+}
+
+// Сгенерировать финальное видео
+async function generateFinalVideo(data: { blocks: VideoBlock[], audioSettings: AudioSettings, backgroundMusic: string }) {
+  if (!editingReel.value) return
+  
+  try {
+    processing.value = true
+    
+    // Сначала сохраняем изменения
+    await saveVideoBlocks(data)
+    
+    // Затем запускаем генерацию видео
+    const response = await fetch(`${config.public.apiBase}/api/reels/${editingReel.value.id}/generate-final-video`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      showModal('success', 'Генерация началась', 'Видео генерируется. Это может занять несколько минут. Вы получите уведомление когда видео будет готово.')
+      
+      // Закрываем редактор и возвращаемся к списку
+      showBlockEditor.value = false
+      editingReel.value = null
+      showCreationForm.value = true
+      await loadReels()
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      showModal('error', 'Ошибка генерации', errorData.error || 'Не удалось запустить генерацию видео')
+    }
+  } catch (error) {
+    console.error('Ошибка:', error)
+    showModal('error', 'Ошибка', 'Произошла ошибка при генерации видео')
+  } finally {
+    processing.value = false
+  }
+}
+
 // Получение класса для статуса
 function getStatusClass(status: string): string {
   switch (status) {
@@ -696,6 +935,10 @@ function getStatusClass(status: string): string {
       return 'bg-gray-100 text-gray-700'
     case 'scenario_generated':
       return 'bg-blue-100 text-blue-700'
+    case 'blocks_created':
+      return 'bg-indigo-100 text-indigo-700'
+    case 'video_generating':
+      return 'bg-yellow-100 text-yellow-700'
     case 'video_created':
       return 'bg-green-100 text-green-700'
     default:
@@ -710,6 +953,10 @@ function getStatusText(status: string): string {
       return 'Черновик'
     case 'scenario_generated':
       return 'Сценарий готов'
+    case 'blocks_created':
+      return 'Блоки готовы'
+    case 'video_generating':
+      return 'Генерация видео...'
     case 'video_created':
       return 'Видео создано'
     default:
