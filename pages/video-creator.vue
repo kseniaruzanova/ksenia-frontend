@@ -409,8 +409,28 @@
                         </div>
                         <p class="text-sm text-gray-700"><strong class="text-gray-900">Озвучка:</strong> {{ block.text }}</p>
                         <p class="text-sm text-gray-700"><strong class="text-gray-900">Текст на экране:</strong> {{ block.displayText }}</p>
-                        <div v-if="block.images && block.images.length" class="mt-3 flex gap-2 flex-wrap">
-                          <img v-for="(img, j) in block.images" :key="j" :src="img" class="w-16 h-16 object-cover rounded-lg border" />
+                        
+                        <!-- Промпты изображений -->
+                        <div v-if="block.imagePrompts && block.imagePrompts.length" class="mt-3">
+                          <p class="text-sm text-gray-700 mb-2"><strong class="text-gray-900">Промпты для изображений:</strong></p>
+                          <div class="space-y-1">
+                            <div v-for="(prompt, j) in block.imagePrompts" :key="j" class="text-xs text-gray-600 bg-gray-100 p-2 rounded">
+                              {{ prompt }}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Сгенерированные изображения -->
+                        <div v-if="block.images && block.images.length" class="mt-3">
+                          <p class="text-sm text-gray-700 mb-2"><strong class="text-gray-900">Сгенерированные изображения ({{ block.images.length }} шт.):</strong></p>
+                          <div class="flex gap-2 flex-wrap">
+                            <div v-for="(img, j) in block.images" :key="j" class="relative">
+                              <img :src="img" class="w-16 h-28 object-cover rounded-lg border" />
+                              <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs text-center py-1">
+                                {{ (j + 1) * 2 }}с
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -608,6 +628,7 @@ interface VideoBlock {
   displayText: string
   duration: number
   images: string[]
+  imagePrompts?: string[]
   imageAnimation?: string
   transition?: string
   scrollingText?: boolean

@@ -127,27 +127,73 @@
           </label>
         </div>
 
-        <!-- Загрузка изображений -->
-        <div class="mb-4">
+        <!-- Промпты для изображений -->
+        <div v-if="block.imagePrompts && block.imagePrompts.length > 0" class="mb-4">
           <label class="block text-sm font-semibold text-gray-700 mb-2">
-            🖼️ Изображения (опционально)
+            🎨 Промпты для генерации изображений
           </label>
-          <div class="flex flex-wrap gap-3">
+          <div class="space-y-2">
+            <div 
+              v-for="(prompt, promptIndex) in block.imagePrompts" 
+              :key="promptIndex"
+              class="p-3 bg-gray-50 rounded-lg border border-gray-200"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <p class="text-sm text-gray-700">{{ prompt }}</p>
+                </div>
+                <button
+                  @click="regenerateImage(index, promptIndex)"
+                  :disabled="regeneratingImages"
+                  class="ml-2 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition disabled:opacity-50"
+                >
+                  {{ regeneratingImages ? '⏳' : '🔄' }}
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            ИИ сгенерировал эти промпты для создания изображений
+          </p>
+        </div>
+
+        <!-- Сгенерированные изображения -->
+        <div v-if="block.images && block.images.length > 0" class="mb-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            🖼️ Сгенерированные изображения
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div 
               v-for="(image, imgIndex) in block.images" 
               :key="imgIndex"
-              class="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-200"
+              class="relative aspect-[9/16] rounded-lg overflow-hidden border-2 border-gray-200 group"
             >
-\              <img :src="getImageUrl(image)" alt="Preview" class="w-full h-full object-cover" />
-              <button
-                @click="removeImage(index, imgIndex)"
-                class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
-              >
-                ×
-              </button>
+              <img :src="getImageUrl(image)" alt="Generated image" class="w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                <button
+                  @click="removeImage(index, imgIndex)"
+                  class="opacity-0 group-hover:opacity-100 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="absolute bottom-1 left-1 right-1 bg-black bg-opacity-50 text-white text-xs p-1 rounded">
+                {{ (imgIndex + 1) * 2 }}с
+              </div>
             </div>
-            
-            <label class="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-500 transition">
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            Каждое изображение показывается 2 секунды в видео
+          </p>
+        </div>
+
+        <!-- Загрузка собственных изображений -->
+        <div class="mb-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            📁 Добавить свои изображения
+          </label>
+          <div class="flex flex-wrap gap-3">
+            <label class="w-24 h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-purple-500 transition">
               <input
                 type="file"
                 accept="image/*"
@@ -155,13 +201,14 @@
                 class="hidden"
                 @change="(e) => handleImageUpload(e, index)"
               />
-              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-8 h-8 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
               </svg>
+              <span class="text-xs text-gray-500">Добавить</span>
             </label>
           </div>
           <p class="text-xs text-gray-500 mt-2">
-            Загрузите изображения для этого блока
+            Загрузите свои изображения для замены сгенерированных
           </p>
         </div>
       </div>
@@ -297,6 +344,7 @@ interface VideoBlock {
   displayText: string
   duration: number
   images: string[]
+  imagePrompts?: string[]
   imageAnimation?: string
   transition?: string
   scrollingText?: boolean
@@ -344,6 +392,7 @@ const blocks = ref<VideoBlock[]>(
 const audioSettings = ref<AudioSettings>(JSON.parse(JSON.stringify(props.initialAudioSettings)))
 const backgroundMusic = ref(props.initialBackgroundMusic)
 const uploading = ref(false)
+const regeneratingImages = ref(false)
 
 const canGenerateVideo = computed(() => {
   return blocks.value.every(block => 
@@ -408,6 +457,45 @@ async function handleImageUpload(event: Event, blockIndex: number) {
 
 function removeImage(blockIndex: number, imageIndex: number) {
   blocks.value[blockIndex].images.splice(imageIndex, 1)
+}
+
+async function regenerateImage(blockIndex: number, promptIndex: number) {
+  if (!blocks.value[blockIndex].imagePrompts?.[promptIndex]) return
+  
+  regeneratingImages.value = true
+  
+  try {
+    const response = await fetch(`${config.public.apiBase}/api/reels/regenerate-image`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: blocks.value[blockIndex].imagePrompts![promptIndex],
+        blockIndex,
+        promptIndex
+      })
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      // Заменяем изображение по индексу
+      if (blocks.value[blockIndex].images[promptIndex]) {
+        blocks.value[blockIndex].images[promptIndex] = data.imageUrl
+      } else {
+        blocks.value[blockIndex].images.push(data.imageUrl)
+      }
+    } else {
+      console.error('Failed to regenerate image')
+      alert('Не удалось перегенерировать изображение')
+    }
+  } catch (error) {
+    console.error('Error regenerating image:', error)
+    alert('Ошибка при перегенерации изображения')
+  } finally {
+    regeneratingImages.value = false
+  }
 }
 
 async function handleMusicUpload(event: Event) {
