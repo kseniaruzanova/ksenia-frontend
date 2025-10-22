@@ -351,21 +351,33 @@
                     >
                       Ваш браузер не поддерживает видео.
                     </video>
-                    <div class="flex gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       <a 
                         :href="selectedReel.videoUrl" 
                         download
-                        class="flex-1 text-center px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
+                        class="text-center px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
                       >
                         📥 Скачать видео
                       </a>
                       <a 
                         :href="selectedReel.videoUrl" 
                         target="_blank"
-                        class="flex-1 text-center px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition"
+                        class="text-center px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition"
                       >
                         🔗 Открыть в новой вкладке
                       </a>
+                      <button
+                        @click="regenerateVideo(false)"
+                        class="text-center px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold transition"
+                      >
+                        ♻️ Перегенерировать
+                      </button>
+                      <button
+                        @click="regenerateVideo(true)"
+                        class="text-center px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition"
+                      >
+                        🎙️ Перегенерировать (с озвучкой)
+                      </button>
                     </div>
                   </div>
                   <div class="bg-green-50 px-6 py-3 border-t border-green-200">
@@ -815,6 +827,47 @@ async function generateScenario() {
     showModal('error', 'Ошибка', 'Произошла ошибка при создании рилса. Попробуйте позже.')
     generatingScenario.value = false
     showCreationForm.value = true
+  } finally {
+    processing.value = false
+  }
+}
+
+// Перегенерация видео
+async function regenerateVideo(forceTTS: boolean) {
+  if (!selectedReel.value) return
+
+  try {
+    processing.value = true
+    const res = await fetch(`${config.public.apiBase}/api/reels/${selectedReel.value.id}/regenerate-final-video`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ forceTTS })
+    })
+
+    if (res.ok) {
+      const result = await res.json()
+      // Инициализируем прогресс
+      videoGenerationProgress.value = result.progress || {
+        currentStep: 'Инициализация генерации видео',
+        stepProgress: 0,
+        totalProgress: 0,
+        estimatedTimeRemaining: 180,
+        logs: ['♻️ Запущена перегенерация видео...']
+      }
+      selectedReel.value = { ...(selectedReel.value as any), status: 'video_generating', videoUrl: undefined } as any
+      showModal('success', 'Перегенерация запущена', forceTTS ? 'Видео и озвучка будут созданы заново.' : 'Видео будет создано заново, озвучка сохранена.')
+      const rid = result.reelId || (selectedReel.value ? selectedReel.value.id : '')
+      if (rid) startProgressPolling(String(rid))
+    } else {
+      const err = await res.json().catch(() => ({}))
+      showModal('error', 'Ошибка', err.error || 'Не удалось перегенерировать видео')
+    }
+  } catch (e) {
+    console.error(e)
+    showModal('error', 'Ошибка', 'Произошла ошибка при перегенерации видео')
   } finally {
     processing.value = false
   }
