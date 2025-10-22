@@ -213,6 +213,83 @@
                         {{ formatDate(selectedReel.createdAt) }}
                       </span>
                     </div>
+                    
+                    <!-- Детальный прогресс генерации видео -->
+                    <div v-if="selectedReel.status === 'video_generating' && videoGenerationProgress" class="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
+                      <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-semibold text-yellow-800 flex items-center">
+                          <svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                          </svg>
+                          {{ videoGenerationProgress.currentStep }}
+                        </h3>
+                        <span class="text-sm text-yellow-700 font-medium">
+                          {{ videoGenerationProgress.totalProgress }}%
+                        </span>
+                      </div>
+                      
+                      <!-- Общий прогресс -->
+                      <div class="mb-3">
+                        <div class="flex justify-between text-sm text-yellow-700 mb-1">
+                          <span>Общий прогресс</span>
+                          <span>{{ videoGenerationProgress.totalProgress }}%</span>
+                        </div>
+                        <div class="w-full bg-yellow-200 rounded-full h-2">
+                          <div 
+                            class="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-500 ease-out"
+                            :style="{ width: videoGenerationProgress.totalProgress + '%' }"
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <!-- Прогресс текущего шага -->
+                      <div class="mb-3">
+                        <div class="flex justify-between text-sm text-yellow-700 mb-1">
+                          <span>Текущий шаг</span>
+                          <span>{{ videoGenerationProgress.stepProgress }}%</span>
+                        </div>
+                        <div class="w-full bg-yellow-200 rounded-full h-1.5">
+                          <div 
+                            class="bg-gradient-to-r from-orange-400 to-red-400 h-1.5 rounded-full transition-all duration-300 ease-out"
+                            :style="{ width: videoGenerationProgress.stepProgress + '%' }"
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <!-- Оставшееся время -->
+                      <div v-if="videoGenerationProgress.estimatedTimeRemaining" class="mb-3">
+                        <div class="flex items-center text-sm text-yellow-700">
+                          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Осталось: {{ Math.ceil(videoGenerationProgress.estimatedTimeRemaining / 60) }} мин</span>
+                        </div>
+                      </div>
+                      
+                      <!-- Логи процесса -->
+                      <div v-if="videoGenerationProgress.logs && videoGenerationProgress.logs.length > 0" class="mt-3">
+                        <div class="text-sm text-yellow-700 font-medium mb-2">📋 Последние действия:</div>
+                        <div class="max-h-32 overflow-y-auto space-y-1">
+                          <div 
+                            v-for="(log, index) in videoGenerationProgress.logs.slice(-5)" 
+                            :key="index"
+                            class="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded"
+                          >
+                            {{ log }}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Ошибка -->
+                      <div v-if="videoGenerationProgress.error" class="mt-3 p-3 bg-red-100 border border-red-200 rounded-lg">
+                        <div class="flex items-center text-red-700">
+                          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span class="text-sm font-medium">Ошибка: {{ videoGenerationProgress.error }}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <button 
                     @click.stop="deleteReel(selectedReel.id)"
@@ -512,6 +589,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 interface VideoBlock {
   id: string
   text: string
@@ -561,6 +639,17 @@ const generatingScenario = ref(false)
 const showBlockEditor = ref(false)
 const generatingBlocks = ref(false)
 const editingReel = ref<Reel | null>(null)
+
+// Состояния для отслеживания прогресса генерации видео
+const videoGenerationProgress = ref<{
+  currentStep: string
+  stepProgress: number
+  totalProgress: number
+  estimatedTimeRemaining?: number
+  logs: string[]
+  error?: string
+} | null>(null)
+const progressPollingInterval = ref<NodeJS.Timeout | null>(null)
 
 // Модальное окно
 interface ModalData {
@@ -953,27 +1042,19 @@ async function generateFinalVideo(data: { blocks: VideoBlock[], audioSettings: A
       showCreationForm.value = true
       await loadReels()
 
-      // Пуллинг статуса выбранного рилса
+      // Инициализируем прогресс
+      videoGenerationProgress.value = result.progress || {
+        currentStep: 'Инициализация генерации видео',
+        stepProgress: 0,
+        totalProgress: 0,
+        estimatedTimeRemaining: 180,
+        logs: ['🎬 Начинаем генерацию видео...']
+      }
+      
+      // Запускаем отслеживание прогресса
       const reelId = (result.reelId || (selectedReel.value as any)?.id)
       if (reelId) {
-        const start = Date.now()
-        const poll = async () => {
-          // 90 секунд лимит ожидания
-          if (Date.now() - start > 90_000) return
-          const res = await fetch(`${config.public.apiBase}/api/reels/${reelId}`, {
-            headers: { 'Authorization': `Bearer ${token.value}` }
-          })
-          if (res.ok) {
-            const r = await res.json()
-            // Обновляем список и выбранный рилс
-            await loadReels()
-            const found = reels.value.find(x => x.id === r._id)
-            if (found) selectedReel.value = found
-            if (r.status === 'video_created' && r.videoUrl) return
-          }
-          setTimeout(poll, 3000)
-        }
-        setTimeout(poll, 3000)
+        startProgressPolling(reelId)
       }
     } else {
       const errorData = await response.json().catch(() => ({}))
@@ -1073,9 +1154,62 @@ function renderMarkdown(text: string): string {
   return html
 }
 
+// Функции для отслеживания прогресса генерации видео
+async function startProgressPolling(reelId: string) {
+  if (progressPollingInterval.value) {
+    clearInterval(progressPollingInterval.value)
+  }
+  
+  const poll = async () => {
+    try {
+      const response = await fetch(`${config.public.apiBase}/api/reels/${reelId}/generation-progress`, {
+        headers: { 'Authorization': `Bearer ${token.value}` }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Обновляем прогресс
+        videoGenerationProgress.value = data.progress
+        
+        // Если генерация завершена
+        if (data.status === 'video_created') {
+          stopProgressPolling()
+          await loadReels()
+          const found = reels.value.find(x => x.id === reelId)
+          if (found) selectedReel.value = found
+          showModal('success', 'Готово!', 'Видео успешно создано!')
+        } else if (data.status === 'blocks_created' && data.progress?.error) {
+          stopProgressPolling()
+          showModal('error', 'Ошибка генерации', data.progress.error)
+        }
+      }
+    } catch (error) {
+      console.error('Error polling progress:', error)
+    }
+  }
+  
+  // Запускаем сразу и затем каждые 2 секунды
+  await poll()
+  progressPollingInterval.value = setInterval(poll, 2000)
+}
+
+function stopProgressPolling() {
+  if (progressPollingInterval.value) {
+    clearInterval(progressPollingInterval.value)
+    progressPollingInterval.value = null
+  }
+  videoGenerationProgress.value = null
+}
+
 // Загружаем рилсы при монтировании
 onMounted(() => {
   loadReels()
+})
+
+// Очистка при размонтировании компонента
+onUnmounted(() => {
+  stopProgressPolling()
 })
 </script>
 
