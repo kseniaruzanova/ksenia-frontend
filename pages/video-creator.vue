@@ -300,6 +300,33 @@
                     </p>
                   </div>
                 </div>
+
+                <!-- Список блоков (всегда показывать, если есть) -->
+                <div v-if="selectedReel.blocks && selectedReel.blocks.length" class="border-2 border-indigo-200 rounded-xl overflow-hidden">
+                  <div class="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-3">
+                    <p class="text-white font-semibold flex items-center">
+                      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m0 14v2m6-6h6M3 11h12M3 17h12"></path>
+                      </svg>
+                      Блоки видео
+                    </p>
+                  </div>
+                  <div class="p-6 bg-white">
+                    <div class="space-y-4">
+                      <div v-for="(block, idx) in selectedReel.blocks" :key="block.id" class="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                        <div class="flex items-center justify-between mb-2">
+                          <h4 class="text-sm sm:text-base font-semibold text-gray-800">Блок {{ idx + 1 }} • {{ block.duration }}с</h4>
+                          <span class="text-xs text-gray-500">{{ block.imageAnimation || 'zoom-in' }} • {{ block.transition || 'fade' }} • {{ block.scrollingText ? 'бегущий текст' : 'статичный текст' }}</span>
+                        </div>
+                        <p class="text-sm text-gray-700"><strong class="text-gray-900">Озвучка:</strong> {{ block.text }}</p>
+                        <p class="text-sm text-gray-700"><strong class="text-gray-900">Текст на экране:</strong> {{ block.displayText }}</p>
+                        <div v-if="block.images && block.images.length" class="mt-3 flex gap-2 flex-wrap">
+                          <img v-for="(img, j) in block.images" :key="j" :src="img" class="w-16 h-16 object-cover rounded-lg border" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -897,6 +924,11 @@ async function generateFinalVideo(data: { blocks: VideoBlock[], audioSettings: A
   
   try {
     processing.value = true
+    // экран статуса
+    selectedReel.value = {
+      ...(selectedReel.value || editingReel.value as any),
+      status: 'video_generating'
+    } as any
     
     // Сначала сохраняем изменения
     await saveVideoBlocks(data)
@@ -912,13 +944,37 @@ async function generateFinalVideo(data: { blocks: VideoBlock[], audioSettings: A
     
     if (response.ok) {
       const result = await response.json()
-      showModal('success', 'Генерация началась', 'Видео генерируется. Это может занять несколько минут. Вы получите уведомление когда видео будет готово.')
+      // Показываем компактный тост и запускаем авто-обновление статуса
+      showModal('success', 'Генерация началась', 'Видео генерируется. Это может занять 1–3 минуты. Страница обновит статус автоматически.')
       
       // Закрываем редактор и возвращаемся к списку
       showBlockEditor.value = false
       editingReel.value = null
       showCreationForm.value = true
       await loadReels()
+
+      // Пуллинг статуса выбранного рилса
+      const reelId = (result.reelId || (selectedReel.value as any)?.id)
+      if (reelId) {
+        const start = Date.now()
+        const poll = async () => {
+          // 90 секунд лимит ожидания
+          if (Date.now() - start > 90_000) return
+          const res = await fetch(`${config.public.apiBase}/api/reels/${reelId}`, {
+            headers: { 'Authorization': `Bearer ${token.value}` }
+          })
+          if (res.ok) {
+            const r = await res.json()
+            // Обновляем список и выбранный рилс
+            await loadReels()
+            const found = reels.value.find(x => x.id === r._id)
+            if (found) selectedReel.value = found
+            if (r.status === 'video_created' && r.videoUrl) return
+          }
+          setTimeout(poll, 3000)
+        }
+        setTimeout(poll, 3000)
+      }
     } else {
       const errorData = await response.json().catch(() => ({}))
       showModal('error', 'Ошибка генерации', errorData.error || 'Не удалось запустить генерацию видео')
