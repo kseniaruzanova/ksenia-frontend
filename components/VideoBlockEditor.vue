@@ -331,7 +331,16 @@ defineEmits(['back', 'save', 'generate-video'])
 const config = useRuntimeConfig()
 const token = useCookie('bearer-token')
 
-const blocks = ref<VideoBlock[]>(JSON.parse(JSON.stringify(props.initialBlocks)))
+// Инициализируем блоки с дефолтными значениями для новых полей
+const blocks = ref<VideoBlock[]>(
+  JSON.parse(JSON.stringify(props.initialBlocks)).map((block: VideoBlock) => ({
+    ...block,
+    imageAnimation: block.imageAnimation || 'zoom-in',
+    transition: block.transition || 'fade',
+    scrollingText: block.scrollingText ?? false
+  }))
+)
+
 const audioSettings = ref<AudioSettings>(JSON.parse(JSON.stringify(props.initialAudioSettings)))
 const backgroundMusic = ref(props.initialBackgroundMusic)
 const uploading = ref(false)
