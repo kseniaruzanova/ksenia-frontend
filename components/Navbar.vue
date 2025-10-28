@@ -1,5 +1,5 @@
 <template>
-  <nav class="bg-gray-800">
+  <nav class="bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900 shadow-lg border-b border-purple-500/20">
     <!-- Мобильное меню (бургер) -->
     <div class="lg:hidden">
       <div class="flex items-center justify-between p-4">
@@ -27,48 +27,61 @@
         
         <button
           @click="handleLogout"
-          class="text-white hover:text-gray-300 text-sm"
+          class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 shadow-md"
         >
-          Выйти
+          <span class="flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            Выйти
+          </span>
         </button>
       </div>
 
       <!-- Выпадающее меню для мобильных -->
       <div
         v-if="isMobileMenuOpen"
-        class="px-4 pb-4 bg-gray-800"
+        class="px-4 pb-4 bg-gradient-to-b from-gray-900 to-black backdrop-blur-sm"
       >
         <div class="space-y-2">
           <NuxtLink 
             to="/" 
-            class="block text-white hover:bg-gray-700 px-4 py-2 rounded-md transition-colors"
+            class="block text-white hover:bg-purple-900/50 px-4 py-2 rounded-lg transition-all duration-200 hover:translate-x-2 font-medium"
             @click="closeMenu"
           >
-            Главная
+            🏠 Главная
           </NuxtLink>
 
           <NuxtLink 
             to="/tarot" 
-            class="block text-white hover:bg-gray-700 px-4 py-2 rounded-md transition-colors"
+            class="block text-white hover:bg-purple-900/50 px-4 py-2 rounded-lg transition-all duration-200 hover:translate-x-2 font-medium"
             @click="closeMenu"
           >
-            Таро
+            🔮 Таро
           </NuxtLink>
 
           <NuxtLink 
             to="/natal" 
-            class="block text-white hover:bg-gray-700 px-4 py-2 rounded-md transition-colors"
+            class="block text-white hover:bg-purple-900/50 px-4 py-2 rounded-lg transition-all duration-200 hover:translate-x-2 font-medium"
             @click="closeMenu"
           >
-            Карта
+            🌟 Карта
           </NuxtLink>
 
           <NuxtLink 
             to="/library" 
-            class="block text-white hover:bg-gray-700 px-4 py-2 rounded-md transition-colors"
+            class="block text-white hover:bg-purple-900/50 px-4 py-2 rounded-lg transition-all duration-200 hover:translate-x-2 font-medium"
             @click="closeMenu"
           >
-            Школа
+            📚 Школа
+          </NuxtLink>
+
+          <NuxtLink 
+            to="/video-creator" 
+            class="block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md"
+            @click="closeMenu"
+          >
+            🎬 Создатель видео
           </NuxtLink>
 
           <!-- Ссылки для Админа -->
@@ -255,72 +268,89 @@
     <div class="hidden lg:block">
       <div class="max-w-7xl mx-auto">
         <div class="flex items-center justify-between p-4">
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-6">
             <NuxtLink 
               to="/" 
-              class="text-white hover:text-gray-300"
+              class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
             >
               Главная
+              <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
             </NuxtLink>
 
             <NuxtLink 
               to="/tarot" 
-              class="text-white hover:text-gray-300"
+              class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
             >
               Таро
+              <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
             </NuxtLink>
 
             <NuxtLink 
               to="/natal" 
-              class="text-white hover:text-gray-300"
+              class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
             >
               Карта
+              <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
             </NuxtLink>
 
             <NuxtLink 
               to="/library" 
-              class="text-white hover:text-gray-300"
+              class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
             >
               Школа
+              <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
+            </NuxtLink>
+
+            <NuxtLink 
+              to="/video-creator" 
+              class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              🎬 Создатель видео
             </NuxtLink>
 
             <!-- Ссылки для Админа -->
             <template v-if="isAdmin">
               <NuxtLink 
                 to="/constructor" 
-                class="text-white hover:text-gray-300"
+                class="text-white hover:text-purple-300 transition-colors duration-200 relative group"
               >
                 Конструктор продуктов
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
               </NuxtLink>
               <NuxtLink 
                 to="/users" 
-                class="text-white hover:text-gray-300"
+                class="text-white hover:text-purple-300 transition-colors duration-200 relative group"
               >
                 Пользователи
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
               </NuxtLink>
               <NuxtLink 
                 to="/customers" 
-                class="text-white hover:text-gray-300"
+                class="text-white hover:text-purple-300 transition-colors duration-200 relative group"
               >
                 Кастомеры
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
               </NuxtLink>
               <NuxtLink 
                 to="/payments" 
-                class="text-white hover:text-gray-300"
+                class="text-white hover:text-purple-300 transition-colors duration-200 relative group"
               >
                 Оплаты
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
               </NuxtLink>
               <NuxtLink 
                 to="/daily-messaging" 
-                class="text-white hover:text-gray-300"
+                class="text-white hover:text-purple-300 transition-colors duration-200 relative group"
               >
                 Ежедневные сообщения
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
               </NuxtLink>
               <NuxtLink 
                 to="/ai-settings" 
-                class="text-white hover:text-gray-300"
+                class="text-white hover:text-purple-300 transition-colors duration-200 relative group"
               >
                 Настройки AI
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
               </NuxtLink>
             </template>
 
@@ -449,9 +479,14 @@
           </div>
           <button
             @click="handleLogout"
-            class="text-white hover:text-gray-300"
+            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
-            Выйти
+            <span class="flex items-center">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              </svg>
+              Выйти
+            </span>
           </button>
         </div>
       </div>
