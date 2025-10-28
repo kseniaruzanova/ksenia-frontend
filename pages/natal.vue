@@ -158,6 +158,40 @@
                     </div>
                 </div>
 
+                <!-- Гороскопы по планетам -->
+                <div class="bg-white rounded-2xl shadow p-5 md:p-6 mb-6 border border-gray-100">
+                    <h3 class="text-lg font-semibold mb-4 text-indigo-700 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3糖果42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        Персональные гороскопы
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Получите подробный гороскоп по каждой из планет в вашем знаке зодиака</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                            v-for="planet in planetsWithHoroscopes"
+                            :key="planet.key"
+                            @click="downloadHoroscope(planet.key, planet.planet)"
+                            :disabled="loadingHoroscope"
+                            class="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 hover:border-indigo-400 hover:shadow-md transition-all group"
+                        >
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" :style="{ backgroundColor: getPlanetColor(planet.planet) + '20', color: getPlanetColor(planet.planet) }">
+                                    {{ getPlanetAbbreviation(planet.planet) }}
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-sm text-gray-800">{{ planet.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ planet.description }}</div>
+                                </div>
+                            </div>
+                            <svg v-if="!loadingHoroscope" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <div v-else class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Таблица планета-знак-дом -->
                 <div class="bg-white rounded-2xl shadow p-5 md:p-6 mb-6 border border-gray-100">
                     <h3 class="text-lg font-semibold mb-4 text-indigo-700 flex items-center">
@@ -738,6 +772,15 @@
     const hoverPlanet = ref < Planet | null > (null);
     const error = ref < string | null > (null);
     const loading = ref(false);
+    const loadingHoroscope = ref(false);
+
+    // Планеты с доступными гороскопами
+    const planetsWithHoroscopes = [
+        { key: 'jupiter', planet: 'Jupiter', name: 'Юпитер', description: 'Гороскоп по Юпитеру' },
+        { key: 'venus', planet: 'Venus', name: 'Венера', description: 'Гороскоп по Венере' },
+        { key: 'mercury', planet: 'Mercury', name: 'Меркурий', description: 'Гороскоп по Меркурию' },
+        { key: 'saturn', planet: 'Saturn', name: 'Сатурн', description: 'Гороскоп по Сатурну' }
+    ];
 
     function toRad(deg: number) {
         return (deg * Math.PI) / 180;
@@ -950,6 +993,48 @@
             console.error('Error fetching chart:', e);
         } finally {
             loading.value = false;
+        }
+    }
+
+    // Функция для загрузки гороскопа
+    async function downloadHoroscope(planetKey: string, planetName: string) {
+        if (!chartData.value) {
+            error.value = 'Сначала рассчитайте натальную карту';
+            return;
+        }
+
+        try {
+            loadingHoroscope.value = true;
+            
+            // Находим планету в данных карты
+            const planet = chartData.value.planets.find(p => p.name === planetName);
+            if (!planet) {
+                error.value = 'Планета не найдена в вашей карте';
+                return;
+            }
+
+            // Получаем номер знака (1-12)
+            const signNumber = planet.zodiacSign.sign === 'Aries' ? 1 :
+                            planet.zodiacSign.sign === 'Taurus' ? 2 :
+                            planet.zodiacSign.sign === 'Gemini' ? 3 :
+                            planet.zodiacSign.sign === 'Cancer' ? 4 :
+                            planet.zodiacSign.sign === 'Leo' ? 5 :
+                            planet.zodiacSign.sign === 'Virgo' ? 6 :
+                            planet.zodiacSign.sign === 'Libra' ? 7 :
+                            planet.zodiacSign.sign === 'Scorpio' ? 8 :
+                            planet.zodiacSign.sign === 'Sagittarius' ? 9 :
+                            planet.zodiacSign.sign === 'Capricorn' ? 10 :
+                            planet.zodiacSign.sign === 'Aquarius' ? 11 : 12;
+
+            // Скачиваем гороскоп
+            const url = `${config.public.apiBase}/api/astro/horoscope/${planetKey}/${signNumber}`;
+            window.open(url, '_blank');
+            
+        } catch (e: any) {
+            error.value = e.message || 'Не удалось загрузить гороскоп';
+            console.error('Error downloading horoscope:', e);
+        } finally {
+            loadingHoroscope.value = false;
         }
     }
 </script>

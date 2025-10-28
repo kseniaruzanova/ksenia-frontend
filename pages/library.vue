@@ -677,16 +677,24 @@ const allVideosCount = computed(() => videos.value.length)
 const noPlaylistVideosCount = computed(() => videos.value.filter(v => !v.playlistId).length)
 
 const filteredVideos = computed(() => {
+  let result: Video[] = []
+  
   if (selectedPlaylist.value === null) {
-    return videos.value
+    result = videos.value
   } else if (selectedPlaylist.value === 'none') {
-    return videos.value.filter(v => !v.playlistId)
+    result = videos.value.filter(v => !v.playlistId)
   } else {
-    const filtered = videos.value.filter(v => {
+    result = videos.value.filter(v => {
       return v.playlistId === selectedPlaylist.value
     })
-    return filtered
   }
+  
+  // Сортируем по дате создания (старые сверху)
+  return result.sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+    return dateA - dateB // Прямой порядок (возрастание - старые сверху)
+  })
 })
 
 function getPlaylistVideoCount(playlistId: string) {

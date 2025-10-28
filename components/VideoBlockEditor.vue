@@ -37,6 +37,9 @@
             <span class="text-sm text-gray-500">
               ({{ block.duration }}с)
             </span>
+            <div class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              ID: {{ block.id || 'no-id' }} | Index: {{ index }}
+            </div>
           </div>
         </div>
 
@@ -46,7 +49,8 @@
             🎙️ Текст для озвучки
           </label>
           <textarea
-            v-model="block.text"
+            :value="block.text"
+            @input="handleBlockChange(index, 'text', ($event.target as HTMLTextAreaElement).value)"
             rows="3"
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all resize-none"
             placeholder="Текст, который будет озвучен..."
@@ -59,7 +63,8 @@
             📝 Текст на экране
           </label>
           <input
-            v-model="block.displayText"
+            :value="block.displayText"
+            @input="handleBlockChange(index, 'displayText', ($event.target as HTMLInputElement).value)"
             type="text"
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all"
             placeholder="Короткий текст для отображения..."
@@ -72,7 +77,8 @@
             ⏱️ Продолжительность (секунды)
           </label>
           <input
-            v-model.number="block.duration"
+            :value="block.duration"
+            @input="handleBlockChange(index, 'duration', Number(($event.target as HTMLInputElement).value))"
             type="number"
             min="5"
             max="30"
@@ -86,7 +92,8 @@
             ✨ Анимация изображений
           </label>
           <select
-            v-model="block.imageAnimation"
+            :value="block.imageAnimation"
+            @change="handleBlockChange(index, 'imageAnimation', ($event.target as HTMLSelectElement).value)"
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white"
           >
             <option value="zoom-in">🔍 Приближение (Zoom In)</option>
@@ -103,7 +110,8 @@
             🎞️ Переход к следующему блоку
           </label>
           <select
-            v-model="block.transition"
+            :value="block.transition"
+            @change="handleBlockChange(index, 'transition', ($event.target as HTMLSelectElement).value)"
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white"
           >
             <option value="fade">🌅 Плавное затухание (Fade)</option>
@@ -117,7 +125,8 @@
         <div class="mb-4">
           <label class="flex items-center cursor-pointer">
             <input
-              v-model="block.scrollingText"
+              :checked="block.scrollingText"
+              @change="handleBlockChange(index, 'scrollingText', ($event.target as HTMLInputElement).checked)"
               type="checkbox"
               class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-4 focus:ring-purple-100 transition"
             />
@@ -138,23 +147,46 @@
               :key="promptIndex"
               class="p-3 bg-gray-50 rounded-lg border border-gray-200"
             >
-              <div class="flex items-start justify-between">
-                <div class="flex-1">
-                  <p class="text-sm text-gray-700">{{ prompt }}</p>
-                </div>
-                <button
-                  @click="regenerateImage(index, promptIndex)"
-                  :disabled="regeneratingImages"
-                  class="ml-2 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition disabled:opacity-50"
-                >
-                  {{ regeneratingImages ? '⏳' : '🔄' }}
-                </button>
-              </div>
+              <textarea
+                :value="block.imagePrompts[promptIndex]"
+                @input="handlePromptChange(index, promptIndex, ($event.target as HTMLTextAreaElement).value)"
+                rows="2"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition resize-none"
+                placeholder="Введите промпт для генерации изображения..."
+              ></textarea>
             </div>
           </div>
           <p class="text-xs text-gray-500 mt-2">
-            ИИ сгенерировал эти промпты для создания изображений
+            Отредактируйте промпты для лучшего результата генерации изображений
           </p>
+          <!-- Управление генерацией изображений для блока -->
+          <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-medium text-gray-700">Сгенерировать изображения</div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">по умолчанию 5 шт.</span>
+                <button
+                  @click="generateBlockImages(index)"
+                  :disabled="isBlockGenerating[index]"
+                  :class="[
+                    'px-3 py-1 text-xs rounded font-medium transition',
+                    isBlockGenerating[index]
+                      ? 'bg-yellow-100 text-yellow-700 cursor-not-allowed'
+                      : 'bg-purple-500 hover:bg-purple-600 text-white'
+                  ]"
+                >
+                  <span v-if="isBlockGenerating[index]">
+                    <div class="inline-block w-3 h-3 border border-yellow-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+                    {{ blockProgress[index] ?? 0 }}%
+                  </span>
+                  <span v-else>
+                    🎨 Сгенерировать 5
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div v-if="blockErrors[index]" class="text-xs text-red-600 mt-2">{{ blockErrors[index] }}</div>
+          </div>
         </div>
 
         <!-- Сгенерированные изображения -->
@@ -168,8 +200,15 @@
               :key="imgIndex"
               class="relative aspect-[9/16] rounded-lg overflow-hidden border-2 border-gray-200 group"
             >
-              <img :src="getImageUrl(image)" alt="Generated image" class="w-full h-full object-cover" />
-              <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+              <img 
+                :src="getImageUrl(image)" 
+                alt="Generated image" 
+                class="w-full h-full object-cover" 
+                @error="onImgError($event)"
+                @load="onImgLoad($event)"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
                 <button
                   @click="removeImage(index, imgIndex)"
                   class="opacity-0 group-hover:opacity-100 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
@@ -178,12 +217,12 @@
                 </button>
               </div>
               <div class="absolute bottom-1 left-1 right-1 bg-black bg-opacity-50 text-white text-xs p-1 rounded">
-                {{ (imgIndex + 1) * 2 }}с
+                {{ getImageDuration(block) }}с
               </div>
             </div>
           </div>
           <p class="text-xs text-gray-500 mt-2">
-            Каждое изображение показывается 2 секунды в видео
+            Каждое изображение показывается {{ getImageDuration(block) }}с в видео
           </p>
         </div>
 
@@ -230,7 +269,8 @@
             🎤 Громкость голоса: {{ audioSettings.voiceVolume }}%
           </label>
           <input
-            v-model.number="audioSettings.voiceVolume"
+            :value="audioSettings.voiceVolume"
+            @input="handleAudioChange('voiceVolume', Number(($event.target as HTMLInputElement).value))"
             type="range"
             min="0"
             max="100"
@@ -244,7 +284,8 @@
             🎵 Громкость музыки: {{ audioSettings.musicVolume }}%
           </label>
           <input
-            v-model.number="audioSettings.musicVolume"
+            :value="audioSettings.musicVolume"
+            @input="handleAudioChange('musicVolume', Number(($event.target as HTMLInputElement).value))"
             type="range"
             min="0"
             max="100"
@@ -258,7 +299,8 @@
             ⚡ Скорость речи: {{ audioSettings.voiceSpeed }}x
           </label>
           <input
-            v-model.number="audioSettings.voiceSpeed"
+            :value="audioSettings.voiceSpeed"
+            @input="handleAudioChange('voiceSpeed', Number(($event.target as HTMLInputElement).value))"
             type="range"
             min="0.5"
             max="2"
@@ -362,6 +404,7 @@ interface Props {
   initialBlocks?: VideoBlock[]
   initialAudioSettings?: AudioSettings
   initialBackgroundMusic?: string
+  reelId?: string | number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -374,25 +417,38 @@ const props = withDefaults(defineProps<Props>(), {
   initialBackgroundMusic: ''
 })
 
-defineEmits(['back', 'save', 'generate-video'])
+const emit = defineEmits(['back', 'save', 'generate-video'])
 
 const config = useRuntimeConfig()
 const token = useCookie('bearer-token')
 
 // Инициализируем блоки с дефолтными значениями для новых полей
 const blocks = ref<VideoBlock[]>(
-  JSON.parse(JSON.stringify(props.initialBlocks)).map((block: VideoBlock) => ({
-    ...block,
-    imageAnimation: block.imageAnimation || 'zoom-in',
-    transition: block.transition || 'fade',
-    scrollingText: block.scrollingText ?? false
-  }))
+  JSON.parse(JSON.stringify(props.initialBlocks)).map((block: VideoBlock, index: number) => {
+    console.log(`🔍 Initializing block ${index}:`, block);
+    return {
+      ...block,
+      imageAnimation: block.imageAnimation || 'zoom-in',
+      transition: block.transition || 'fade',
+      scrollingText: block.scrollingText ?? false
+    };
+  })
 )
+
+console.log(`🔍 Total blocks initialized: ${blocks.value.length}`);
+blocks.value.forEach((block, index) => {
+  console.log(`🔍 Block ${index}:`, { id: block.id, text: block.text?.substring(0, 50) });
+});
 
 const audioSettings = ref<AudioSettings>(JSON.parse(JSON.stringify(props.initialAudioSettings)))
 const backgroundMusic = ref(props.initialBackgroundMusic)
 const uploading = ref(false)
-const regeneratingImages = ref(false)
+const isBlockGenerating = ref<Record<number, boolean>>({})
+const blockProgress = ref<Record<number, number>>({})
+const blockErrors = ref<Record<number, string | null>>({})
+const promptSaveTimeout = ref<NodeJS.Timeout | null>(null)
+const blockSaveTimeout = ref<NodeJS.Timeout | null>(null)
+const audioSaveTimeout = ref<NodeJS.Timeout | null>(null)
 
 const canGenerateVideo = computed(() => {
   return blocks.value.every(block => 
@@ -400,6 +456,12 @@ const canGenerateVideo = computed(() => {
     block.displayText.trim().length > 0
   )
 })
+
+// Вычисляемое свойство для расчета продолжительности каждой фотографии
+const getImageDuration = (block: VideoBlock) => {
+  if (!block.images || block.images.length === 0) return 0
+  return Math.round((block.duration / block.images.length) * 10) / 10 // Округляем до 1 знака после запятой
+}
 
 // Функция для получения полного URL изображения
 function getImageUrl(imagePath: string): string {
@@ -409,6 +471,16 @@ function getImageUrl(imagePath: string): string {
   }
   // Иначе добавляем базовый URL
   return `${config.public.apiBase}${imagePath}`
+}
+
+function onImgError(e: Event) {
+  const el = e.target as HTMLImageElement
+  el.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iMTEyIiB2aWV3Qm94PSIwIDAgNjQgMTEyIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSIxMTIiIGZpbGw9IiNmM2Y0ZjYiLz48dGV4dCB4PSIzMiIgeT0iNTYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzljYTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+OiDwvdGV4dD48L3N2Zz4='
+}
+
+function onImgLoad(e: Event) {
+  const el = e.target as HTMLImageElement
+  console.log('✅ Image loaded successfully:', el.src)
 }
 
 // Функция для получения полного URL музыки
@@ -459,43 +531,74 @@ function removeImage(blockIndex: number, imageIndex: number) {
   blocks.value[blockIndex].images.splice(imageIndex, 1)
 }
 
-async function regenerateImage(blockIndex: number, promptIndex: number) {
-  if (!blocks.value[blockIndex].imagePrompts?.[promptIndex]) return
-  
-  regeneratingImages.value = true
-  
+
+// Генерация 5 изображений для блока с прямым вызовом backend
+async function generateBlockImages(blockIndex: number) {
+  if (!props.reelId && !(blocks.value as any)._id) {
+    alert('Не удалось определить идентификатор рилса')
+    return
+  }
+  if (isBlockGenerating.value[blockIndex]) return // защита от повторного запуска
+  isBlockGenerating.value[blockIndex] = true
+  blockErrors.value[blockIndex] = null
+  blockProgress.value[blockIndex] = 0
+
   try {
-    const response = await fetch(`${config.public.apiBase}/api/reels/regenerate-image`, {
+    const reelId = String(props.reelId || (blocks.value as any)._id)
+    const res = await fetch(`${config.public.apiBase}/api/reels/${reelId}/blocks/${blockIndex}/generate-images`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.value}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        prompt: blocks.value[blockIndex].imagePrompts![promptIndex],
-        blockIndex,
-        promptIndex
-      })
+      body: JSON.stringify({ imageCount: 5 })
     })
-    
-    if (response.ok) {
-      const data = await response.json()
-      // Заменяем изображение по индексу
-      if (blocks.value[blockIndex].images[promptIndex]) {
-        blocks.value[blockIndex].images[promptIndex] = data.imageUrl
-      } else {
-        blocks.value[blockIndex].images.push(data.imageUrl)
-      }
-    } else {
-      console.error('Failed to regenerate image')
-      alert('Не удалось перегенерировать изображение')
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error || 'Не удалось запустить генерацию изображений')
     }
-  } catch (error) {
-    console.error('Error regenerating image:', error)
-    alert('Ошибка при перегенерации изображения')
+    // Пулинг прогресса
+    await pollBlockProgress(reelId, blockIndex)
+  } catch (e: any) {
+    blockErrors.value[blockIndex] = e?.message || 'Ошибка генерации'
   } finally {
-    regeneratingImages.value = false
+    isBlockGenerating.value[blockIndex] = false
   }
+}
+
+async function pollBlockProgress(reelId: string, blockIndex: number) {
+  const pollOnce = async () => {
+    const res = await fetch(`${config.public.apiBase}/api/reels/${reelId}`, {
+      headers: { 'Authorization': `Bearer ${token.value}` }
+    })
+    if (!res.ok) return
+    const reel = await res.json()
+    const block = reel.blocks?.[blockIndex]
+    if (!block) return
+    blockProgress.value[blockIndex] = block.imageGenerationProgress || 0
+    blocks.value[blockIndex].images = block.images || []
+    if (block.imageGenerationStatus === 'completed' || block.imageGenerationStatus === 'failed') {
+      if (block.imageGenerationStatus === 'failed') {
+        blockErrors.value[blockIndex] = block.imageGenerationError || 'Ошибка генерации'
+      }
+      return true
+    }
+    return false
+  }
+
+  // первый опрос сразу
+  let done = await pollOnce()
+  if (done) return
+  // далее каждые 2 секунды до завершения
+  await new Promise<void>((resolve) => {
+    const iv = setInterval(async () => {
+      const finished = await pollOnce()
+      if (finished) {
+        clearInterval(iv)
+        resolve()
+      }
+    }, 2000)
+  })
 }
 
 async function handleMusicUpload(event: Event) {
@@ -530,6 +633,140 @@ async function handleMusicUpload(event: Event) {
   } finally {
     uploading.value = false
   }
+}
+
+// Сохранение промптов блока
+async function saveBlockPrompts(reelId: string, blockIndex: number, imagePrompts: string[]) {
+  try {
+    const response = await fetch(`${config.public.apiBase}/api/reels/${reelId}/blocks/${blockIndex}/prompts`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ imagePrompts })
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      console.log(`✅ Prompts saved for block ${blockIndex}:`, result)
+      return true
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Failed to save prompts:', errorData.error)
+      return false
+    }
+  } catch (error) {
+    console.error('Error saving prompts:', error)
+    return false
+  }
+}
+
+// Обработчик изменения промптов с автосохранением
+async function handlePromptChange(blockIndex: number, promptIndex: number, newValue: string) {
+  // Обновляем локальное состояние
+  blocks.value[blockIndex].imagePrompts![promptIndex] = newValue
+  
+  // Сохраняем в БД с задержкой (debounce)
+  if (promptSaveTimeout.value) {
+    clearTimeout(promptSaveTimeout.value)
+  }
+  
+  promptSaveTimeout.value = setTimeout(async () => {
+    if (props.reelId) {
+      const success = await saveBlockPrompts(String(props.reelId), blockIndex, blocks.value[blockIndex].imagePrompts!)
+      if (!success) {
+        console.warn('Failed to save prompts, will retry on next change')
+      }
+    }
+  }, 1000) // Сохраняем через 1 секунду после последнего изменения
+}
+
+// Универсальная функция сохранения блока
+async function saveBlock(reelId: string, blockIndex: number, blockData: any) {
+  try {
+    console.log(`🔍 saveBlock called with reelId: ${reelId}, blockIndex: ${blockIndex}, blockData:`, blockData);
+    
+    if (!reelId || reelId === 'undefined') {
+      console.error('❌ Invalid reelId:', reelId);
+      return false;
+    }
+    
+    console.log(`📡 Sending request to: ${config.public.apiBase}/api/reels/${reelId}/blocks/${blockIndex}`);
+    
+    const response = await fetch(`${config.public.apiBase}/api/reels/${reelId}/blocks/${blockIndex}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ blockData })
+    })
+    
+    console.log(`📡 Response status: ${response.status}`);
+    
+    if (response.ok) {
+      const result = await response.json()
+      console.log(`✅ Block ${blockIndex} saved:`, result.updatedFields)
+      return true
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Failed to save block:', errorData.error)
+      return false
+    }
+  } catch (error) {
+    console.error('Error saving block:', error)
+    return false
+  }
+}
+
+// Обработчик изменения блока с автосохранением
+async function handleBlockChange(blockIndex: number, field: string, value: any) {
+  console.log(`🔍 handleBlockChange called with blockIndex: ${blockIndex}, field: ${field}, value:`, value);
+  console.log(`🔍 props.reelId: ${props.reelId}`);
+  console.log(`🔍 Total blocks: ${blocks.value.length}`);
+  console.log(`🔍 Block at index ${blockIndex}:`, blocks.value[blockIndex]);
+  
+  // Обновляем локальное состояние
+  ;(blocks.value[blockIndex] as any)[field] = value
+  
+  // Сохраняем в БД с задержкой (debounce)
+  if (blockSaveTimeout.value) {
+    clearTimeout(blockSaveTimeout.value)
+  }
+  
+  blockSaveTimeout.value = setTimeout(async () => {
+    if (props.reelId && props.reelId !== 'undefined') {
+      const blockData = { [field]: value }
+      console.log(`🔄 Saving block ${blockIndex} with data:`, blockData);
+      const success = await saveBlock(String(props.reelId), blockIndex, blockData)
+      if (!success) {
+        console.warn('Failed to save block change, will retry on next change')
+      }
+    } else {
+      console.warn('❌ Cannot save block change: reelId is invalid:', props.reelId)
+    }
+  }, 1000) // Сохраняем через 1 секунду после последнего изменения
+}
+
+// Обработчик изменения настроек аудио с автосохранением
+async function handleAudioChange(field: string, value: any) {
+  // Обновляем локальное состояние
+  ;(audioSettings.value as any)[field] = value
+  
+  // Сохраняем в БД с задержкой (debounce)
+  if (audioSaveTimeout.value) {
+    clearTimeout(audioSaveTimeout.value)
+  }
+  
+  audioSaveTimeout.value = setTimeout(async () => {
+    // Эмитим событие для родительского компонента
+    emit('save', { 
+      blocks: blocks.value, 
+      audioSettings: audioSettings.value, 
+      backgroundMusic: backgroundMusic.value 
+    })
+  }, 1000) // Сохраняем через 1 секунду после последнего изменения
 }
 </script>
 

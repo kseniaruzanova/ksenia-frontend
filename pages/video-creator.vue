@@ -135,10 +135,11 @@
 
             <!-- Редактор блоков видео -->
             <VideoBlockEditor
-              v-else-if="showBlockEditor && editingReel"
+              v-else-if="showBlockEditor && editingReel && editingReel.id"
               :initialBlocks="editingReel.blocks || []"
               :initialAudioSettings="editingReel.audioSettings"
               :initialBackgroundMusic="editingReel.backgroundMusic"
+              :reelId="editingReel.id"
               @back="exitBlockEditor"
               @save="saveVideoBlocks"
               @generate-video="generateFinalVideo"
@@ -420,14 +421,70 @@
                           </div>
                         </div>
                         
-                        <!-- Сгенерированные изображения -->
-                        <div v-if="block.images && block.images.length" class="mt-3">
-                          <p class="text-sm text-gray-700 mb-2"><strong class="text-gray-900">Сгенерированные изображения ({{ block.images.length }} шт.):</strong></p>
-                          <div class="flex gap-2 flex-wrap">
-                            <div v-for="(img, j) in block.images" :key="j" class="relative">
-                              <img :src="img" class="w-16 h-28 object-cover rounded-lg border" />
-                              <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs text-center py-1">
-                                {{ (j + 1) * 2 }}с
+                        <!-- Управление генерацией изображений -->
+                        <div class="mt-3 p-3 bg-gray-50 rounded-lg">
+                          <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm font-medium text-gray-700">Изображения:</p>
+                            <div class="flex items-center gap-2">
+                              <input 
+                                v-model="blockImageCounts[block.id]"
+                                type="number" 
+                                min="1" 
+                                max="10" 
+                                class="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+                                :disabled="block.imageGenerationStatus === 'generating'"
+                              />
+                              <button
+                                @click="generateBlockImages(block, idx)"
+                                :disabled="block.imageGenerationStatus === 'generating' || !block.imagePrompts?.length"
+                                :class="[
+                                  'px-3 py-1 text-xs rounded font-medium transition',
+                                  block.imageGenerationStatus === 'generating' 
+                                    ? 'bg-yellow-100 text-yellow-700 cursor-not-allowed'
+                                    : 'bg-purple-500 hover:bg-purple-600 text-white'
+                                ]"
+                              >
+                                <span v-if="block.imageGenerationStatus === 'generating'">
+                                  <div class="inline-block w-3 h-3 border border-yellow-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+                                  {{ block.imageGenerationProgress || 0 }}%
+                                </span>
+                                <span v-else-if="block.imageGenerationStatus === 'completed'">
+                                  ✅ Готово
+                                </span>
+                                <span v-else-if="block.imageGenerationStatus === 'failed'">
+                                  ❌ Ошибка
+                                </span>
+                                <span v-else>
+                                  🎨 Генерировать
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <!-- Ошибка генерации -->
+                          <div v-if="block.imageGenerationError" class="text-xs text-red-600 mb-2">
+                            {{ block.imageGenerationError }}
+                          </div>
+                          
+                          <!-- Сгенерированные изображения -->
+                          <div v-if="block.images && block.images.length" class="mt-2">
+                            <div class="flex gap-2 flex-wrap">
+                              <div v-for="(img, j) in block.images" :key="j" class="relative">
+                                <img 
+                                  :src="getImageUrl(img)" 
+                                  :alt="`Изображение ${j + 1}`"
+                                  class="w-16 h-28 object-cover rounded-lg border"
+                                  @error="handleImageError($event, img)"
+                                  @load="handleImageLoad($event, img)"
+                                  loading="lazy"
+                                />
+                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs text-center py-1">
+                                  {{ getImageDuration(block) }}с
+                                </div>
+                                <!-- Индикатор загрузки -->
+                                <div class="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg" v-if="!imageLoaded[img] && !imageErrors[img]">
+                                  <div class="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -634,6 +691,9 @@ interface VideoBlock {
   scrollingText?: boolean
   audioUrl?: string
   order: number
+  imageGenerationStatus?: 'pending' | 'generating' | 'completed' | 'failed'
+  imageGenerationProgress?: number
+  imageGenerationError?: string
 }
 
 interface AudioSettings {
@@ -652,7 +712,7 @@ interface Reel {
   backgroundMusic?: string
   audioSettings?: AudioSettings
   videoUrl?: string
-  status: 'draft' | 'scenario_generated' | 'blocks_created' | 'video_generating' | 'video_created'
+  status: 'draft' | 'scenario_generated' | 'blocks_created' | 'generating_images' | 'video_generating' | 'video_created' | 'error'
   createdAt?: string
   updatedAt?: string
 }
@@ -683,6 +743,13 @@ const videoGenerationProgress = ref<{
   error?: string
 } | null>(null)
 const progressPollingInterval = ref<NodeJS.Timeout | null>(null)
+
+// Состояние для отслеживания загрузки изображений
+const imageLoaded = ref<Record<string, boolean>>({})
+const imageErrors = ref<Record<string, boolean>>({})
+
+// Состояние для количества изображений в блоках
+const blockImageCounts = ref<Record<string, number>>({})
 
 // Модальное окно
 interface ModalData {
@@ -760,6 +827,43 @@ async function loadReels() {
         createdAt: reel.createdAt,
         updatedAt: reel.updatedAt
       }))
+      
+      // Инициализируем количество изображений для блоков и состояние загрузки
+      reels.value.forEach(reel => {
+        if (reel.blocks) {
+          reel.blocks.forEach(block => {
+            if (!blockImageCounts.value[block.id]) {
+              blockImageCounts.value[block.id] = block.imagePrompts?.length || 5
+            }
+            
+            // Инициализируем состояние загрузки изображений
+            if (block.images && block.images.length > 0) {
+              block.images.forEach((img: string) => {
+                console.log(`🔍 Processing image: ${img}, block status: ${block.imageGenerationStatus}`)
+                
+                // Только если изображения действительно завершены, помечаем как загруженные
+                if (block.imageGenerationStatus === 'completed') {
+                  imageLoaded.value[img] = true
+                  imageErrors.value[img] = false
+                  console.log(`✅ Loaded existing completed image: ${img}`)
+                } else {
+                  // Для всех остальных статусов (pending, generating, failed) инициализируем как незагруженные
+                  imageLoaded.value[img] = false
+                  imageErrors.value[img] = false
+                  console.log(`⏳ Initialized image (status: ${block.imageGenerationStatus}): ${img} -> Loaded: false`)
+                }
+              })
+            }
+          })
+        }
+      })
+      
+      // Принудительно обновляем реактивность
+      imageLoaded.value = { ...imageLoaded.value }
+      imageErrors.value = { ...imageErrors.value }
+      
+      console.log('📋 Final imageLoaded state:', imageLoaded.value)
+      console.log('📋 Final imageErrors state:', imageErrors.value)
     } else {
       console.error('Ошибка загрузки рилсов')
     }
@@ -937,6 +1041,8 @@ async function createVideo() {
     
     if (blocksResponse.ok) {
       const updatedReel = await blocksResponse.json()
+      
+      console.log(`🔍 createVideo: updatedReel._id = ${updatedReel._id}, type: ${typeof updatedReel._id}`);
       
       // Очищаем форму
       prompt.value = ''
@@ -1151,10 +1257,14 @@ function getStatusClass(status: string): string {
       return 'bg-blue-100 text-blue-700'
     case 'blocks_created':
       return 'bg-indigo-100 text-indigo-700'
+    case 'generating_images':
+      return 'bg-purple-100 text-purple-700'
     case 'video_generating':
       return 'bg-yellow-100 text-yellow-700'
     case 'video_created':
       return 'bg-green-100 text-green-700'
+    case 'error':
+      return 'bg-red-100 text-red-700'
     default:
       return 'bg-gray-100 text-gray-700'
   }
@@ -1169,10 +1279,14 @@ function getStatusText(status: string): string {
       return 'Сценарий готов'
     case 'blocks_created':
       return 'Блоки готовы'
+    case 'generating_images':
+      return 'Генерация изображений...'
     case 'video_generating':
       return 'Генерация видео...'
     case 'video_created':
       return 'Видео создано'
+    case 'error':
+      return 'Ошибка'
     default:
       return status
   }
@@ -1280,6 +1394,191 @@ function stopProgressPolling() {
 onMounted(() => {
   loadReels()
 })
+
+// Функции для обработки изображений
+function getImageUrl(imgUrl: string): string {
+  // Если URL уже полный, возвращаем как есть
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+    return imgUrl
+  }
+  
+  // Если URL начинается с /api/, добавляем базовый URL
+  if (imgUrl.startsWith('/api/')) {
+    return `${config.public.apiBase}${imgUrl}`
+  }
+  
+  // Если URL относительный, добавляем базовый URL и /api/
+  return `${config.public.apiBase}/api${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`
+}
+
+function handleImageError(event: Event, imgUrl: string) {
+  console.error('Image load error:', imgUrl, event)
+  imageErrors.value[imgUrl] = true
+  imageLoaded.value[imgUrl] = false
+  
+  // Показываем placeholder для ошибки
+  const img = event.target as HTMLImageElement
+  img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iMTEyIiB2aWV3Qm94PSIwIDAgNjQgMTEyIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSIxMTIiIGZpbGw9IiNmM2Y0ZjYiLz48dGV4dCB4PSIzMiIgeT0iNTYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzljYTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+OiDwvdGV4dD48L3N2Zz4='
+}
+
+function handleImageLoad(event: Event, imgUrl?: string) {
+  const img = event.target as HTMLImageElement
+  const key = imgUrl || img.src
+  imageLoaded.value[key] = true
+  imageErrors.value[key] = false
+  console.log(`✅ Browser image loaded: ${key} -> Setting Loaded: true`)
+  
+  // Принудительно обновляем реактивность
+  imageLoaded.value = { ...imageLoaded.value }
+  imageErrors.value = { ...imageErrors.value }
+}
+
+// Генерация изображений для блока
+async function generateBlockImages(block: VideoBlock, blockIndex: number) {
+  if (!selectedReel.value) return
+  
+  try {
+    const imageCount = blockImageCounts.value[block.id] || block.imagePrompts?.length || 5
+    
+    const response = await fetch(`${config.public.apiBase}/api/reels/${selectedReel.value.id}/blocks/${blockIndex}/generate-images`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ imageCount })
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      console.log('Image generation started:', result)
+      
+      // Обновляем статус блока
+      if (selectedReel.value.blocks && selectedReel.value.blocks[blockIndex]) {
+        selectedReel.value.blocks[blockIndex].imageGenerationStatus = 'generating'
+        selectedReel.value.blocks[blockIndex].imageGenerationProgress = 0
+      }
+      
+      // Запускаем опрос статуса
+      startImageGenerationPolling(selectedReel.value.id.toString(), blockIndex)
+      
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      showModal('error', 'Ошибка генерации', errorData.error || 'Не удалось запустить генерацию изображений')
+    }
+  } catch (error) {
+    console.error('Error generating block images:', error)
+    showModal('error', 'Ошибка', 'Произошла ошибка при генерации изображений')
+  }
+}
+
+// Опрос статуса генерации изображений
+async function startImageGenerationPolling(reelId: string, blockIndex: number) {
+  let interval: NodeJS.Timeout | null = null
+  
+  const poll = async () => {
+    try {
+      const response = await fetch(`${config.public.apiBase}/api/reels/${reelId}`, {
+        headers: { 'Authorization': `Bearer ${token.value}` }
+      })
+      
+      if (response.ok) {
+        const reel = await response.json()
+        if (selectedReel.value && selectedReel.value.id === reelId) {
+          // Обновляем данные рилса
+          selectedReel.value = reel
+          
+          const block = reel.blocks?.[blockIndex]
+          if (block) {
+            console.log(`📊 Block ${blockIndex} status: ${block.imageGenerationStatus}, progress: ${block.imageGenerationProgress}%`)
+            
+            // Обновляем состояние загрузки изображений
+            if (block.images && block.images.length > 0) {
+              block.images.forEach((img: string) => {
+                console.log(`🔄 Polling update for image: ${img}, block status: ${block.imageGenerationStatus}`)
+                
+                // Если генерация завершена, помечаем как загруженное
+                if (block.imageGenerationStatus === 'completed') {
+                  imageLoaded.value[img] = true
+                  imageErrors.value[img] = false
+                  console.log(`✅ Polling: Marked image as loaded: ${img}`)
+                } else {
+                  // Для всех остальных статусов помечаем как незагруженное
+                  imageLoaded.value[img] = false
+                  imageErrors.value[img] = false
+                  console.log(`⏳ Polling: Marked image as loading (status: ${block.imageGenerationStatus}): ${img}`)
+                }
+              })
+            }
+            
+            // Принудительно обновляем реактивность
+            imageLoaded.value = { ...imageLoaded.value }
+            imageErrors.value = { ...imageErrors.value }
+            
+            // Проверяем, завершена ли генерация
+            if (block.imageGenerationStatus === 'completed' || block.imageGenerationStatus === 'failed') {
+              console.log(`✅ Image generation finished for block ${blockIndex}: ${block.imageGenerationStatus}`)
+              if (interval) {
+                clearInterval(interval)
+                interval = null
+              }
+              return true // Генерация завершена
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error polling image generation:', error)
+    }
+    return false // Генерация продолжается
+  }
+  
+  // Первый опрос сразу
+  const finished = await poll()
+  if (finished) return
+  
+  // Опрашиваем каждые 2 секунды до завершения
+  interval = setInterval(async () => {
+    const finished = await poll()
+    if (finished && interval) {
+      clearInterval(interval)
+      interval = null
+    }
+  }, 2000)
+}
+
+// Сохранение промптов блока
+async function saveBlockPrompts(reelId: string, blockIndex: number, imagePrompts: string[]) {
+  try {
+    const response = await fetch(`${config.public.apiBase}/api/reels/${reelId}/blocks/${blockIndex}/prompts`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ imagePrompts })
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      console.log(`✅ Prompts saved for block ${blockIndex}:`, result)
+      return true
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Failed to save prompts:', errorData.error)
+      return false
+    }
+  } catch (error) {
+    console.error('Error saving prompts:', error)
+    return false
+  }
+}
+
+// Вычисляемое свойство для расчета продолжительности каждой фотографии
+function getImageDuration(block: VideoBlock): number {
+  if (!block.images || block.images.length === 0) return 0
+  return Math.round((block.duration / block.images.length) * 10) / 10 // Округляем до 1 знака после запятой
+}
 
 // Очистка при размонтировании компонента
 onUnmounted(() => {
