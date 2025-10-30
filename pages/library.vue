@@ -394,7 +394,7 @@
                     <img :src="thumbnailPreview" class="h-32 object-cover rounded-md">
                   </div>
                   <div v-else-if="currentVideo.thumbnail && editingVideo" class="mt-2">
-                    <img :src="`${config.public.apiBase}/api/videos/thumbnail/${currentVideo.thumbnail}`" class="h-32 object-cover rounded-md">
+                    <img :src="resolveThumbnail(currentVideo.thumbnail)" class="h-32 object-cover rounded-md">
                   </div>
                 </div>
                 
@@ -705,12 +705,19 @@ function selectPlaylist(playlistId: string | null | 'none') {
   selectedPlaylist.value = playlistId
 }
 
-// Получение URL обложки
+// Получение URL обложки (локальный файл или внешний URL)
 function getThumbnailUrl(video: Video): string {
   if (video.thumbnail) {
+    if (/^https?:\/\//i.test(video.thumbnail)) return video.thumbnail
     return `${config.public.apiBase}/api/videos/thumbnail/${video.thumbnail}`
   }
   return '/placeholder-thumbnail.jpg'
+}
+
+function resolveThumbnail(thumbnail?: string): string {
+  if (!thumbnail) return '/placeholder-thumbnail.jpg'
+  if (/^https?:\/\//i.test(thumbnail)) return thumbnail
+  return `${config.public.apiBase}/api/videos/thumbnail/${thumbnail}`
 }
 
 // Обработка ошибки загрузки изображения

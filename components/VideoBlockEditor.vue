@@ -97,31 +97,14 @@
             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white"
           >
             <option value="zoom-in">🔍 Приближение (Zoom In)</option>
-            <option value="zoom-out">🔎 Отдаление (Zoom Out)</option>
-            <option value="pan-left">← Движение влево</option>
-            <option value="pan-right">→ Движение вправо</option>
-            <option value="none">⏹️ Без анимации</option>
+            <option value="swipe">↔️ Свайп (Swipe)</option>
           </select>
+          <p class="text-xs text-gray-500 mt-1">
+            Для нечетных блоков (1,3,5...) - оригинальный эффект, для четных (0,2,4...) - обратный эффект
+          </p>
         </div>
 
-        <!-- Переход к следующему блоку -->
-        <div class="mb-4">
-          <label class="block text-sm font-semibold text-gray-700 mb-2">
-            🎞️ Переход к следующему блоку
-          </label>
-          <select
-            :value="block.transition"
-            @change="handleBlockChange(index, 'transition', ($event.target as HTMLSelectElement).value)"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white"
-          >
-            <option value="fade">🌅 Плавное затухание (Fade)</option>
-            <option value="dissolve">💫 Растворение (Dissolve)</option>
-            <option value="wipe">📱 Смахивание (Wipe)</option>
-            <option value="none">⏹️ Без перехода</option>
-          </select>
-        </div>
-
-        <!-- Бегущий текст -->
+        <!-- Последовательное появление слов -->
         <div class="mb-4">
           <label class="flex items-center cursor-pointer">
             <input
@@ -131,9 +114,67 @@
               class="w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-4 focus:ring-purple-100 transition"
             />
             <span class="ml-3 text-sm font-semibold text-gray-700">
-              📜 Бегущий текст (анимация текста справа налево)
+              📜 Последовательное появление слов (слово за словом)
             </span>
           </label>
+        </div>
+
+        <!-- Настройки текста -->
+        <div class="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3">⚙️ Настройки текста на экране</h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Размер шрифта -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">
+                📏 Размер шрифта
+              </label>
+              <input
+                :value="block.textFontSize ?? 50"
+                @input="handleBlockChange(index, 'textFontSize', Number(($event.target as HTMLInputElement).value))"
+                type="number"
+                min="20"
+                max="100"
+                step="5"
+                class="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+              />
+              <span class="text-xs text-gray-500 mt-1 block">{{ block.textFontSize ?? 50 }}px</span>
+            </div>
+
+            <!-- Расположение текста -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">
+                📍 Расположение
+              </label>
+              <select
+                :value="block.textPosition ?? 'bottom'"
+                @change="handleBlockChange(index, 'textPosition', ($event.target as HTMLSelectElement).value)"
+                class="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all bg-white"
+              >
+                <option value="top">⬆️ Сверху</option>
+                <option value="center">➡️ По центру</option>
+                <option value="bottom">⬇️ Снизу</option>
+              </select>
+            </div>
+
+            <!-- Шрифт -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-2">
+                🔤 Шрифт
+              </label>
+              <select
+                :value="block.textFont ?? 'Arial'"
+                @change="handleBlockChange(index, 'textFont', ($event.target as HTMLSelectElement).value)"
+                class="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all bg-white"
+              >
+                <option value="Arial">Arial</option>
+                <option value="Arial Black">Arial Black</option>
+                <option value="Impact">Impact</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Verdana">Verdana</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <!-- Промпты для изображений -->
@@ -262,7 +303,26 @@
         Настройки аудио
       </h3>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Выбор голоса -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            🎙️ Голос для озвучки
+          </label>
+          <select
+            :value="audioSettings.voice"
+            @change="handleAudioChange('voice', ($event.target as HTMLSelectElement).value)"
+            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white"
+          >
+            <option value="alloy">Alloy (нейтральный)</option>
+            <option value="echo">Echo (мужской)</option>
+            <option value="fable">Fable (женский)</option>
+            <option value="onyx">Onyx (глубокий мужской)</option>
+            <option value="nova">Nova (женский, по умолчанию)</option>
+            <option value="shimmer">Shimmer (мягкий женский)</option>
+          </select>
+        </div>
+
         <!-- Громкость голоса -->
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -392,12 +452,19 @@ interface VideoBlock {
   scrollingText?: boolean
   audioUrl?: string
   order: number
+  imageGenerationStatus?: 'pending' | 'generating' | 'completed' | 'failed'
+  imageGenerationProgress?: number
+  imageGenerationError?: string
+  textFontSize?: number
+  textPosition?: string
+  textFont?: string
 }
 
 interface AudioSettings {
   voiceVolume: number
   musicVolume: number
   voiceSpeed: number
+  voice?: string
 }
 
 interface Props {
@@ -412,7 +479,8 @@ const props = withDefaults(defineProps<Props>(), {
   initialAudioSettings: () => ({
     voiceVolume: 80,
     musicVolume: 30,
-    voiceSpeed: 1.0
+    voiceSpeed: 1.0,
+    voice: 'nova'
   }),
   initialBackgroundMusic: ''
 })
@@ -430,7 +498,10 @@ const blocks = ref<VideoBlock[]>(
       ...block,
       imageAnimation: block.imageAnimation || 'zoom-in',
       transition: block.transition || 'fade',
-      scrollingText: block.scrollingText ?? false
+      scrollingText: block.scrollingText ?? false,
+      textFontSize: block.textFontSize ?? 50,
+      textPosition: block.textPosition || 'bottom',
+      textFont: block.textFont || 'Arial'
     };
   })
 )

@@ -1,6 +1,29 @@
 <template>
   <div>
     <Navbar />
+    
+    <!-- Блок ошибок -->
+    <div class="fixed top-20 right-4 z-50 space-y-2 max-w-md">
+      <TransitionGroup name="error">
+        <div
+          v-for="error in errors"
+          :key="error.id"
+          class="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-start justify-between gap-3 animate-slide-in"
+        >
+          <div class="flex-1">
+            <p class="text-sm font-medium">{{ error.message }}</p>
+          </div>
+          <button
+            @click="removeError(error.id)"
+            class="text-white hover:text-red-200 transition flex-shrink-0"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </TransitionGroup>
+    </div>
     <div class="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-4 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-8">
       <div class="max-w-7xl mx-auto">
         <!-- Заголовок -->
@@ -700,6 +723,7 @@ interface AudioSettings {
   voiceVolume: number
   musicVolume: number
   voiceSpeed: number
+  voice?: string
 }
 
 interface Reel {
@@ -742,6 +766,32 @@ const videoGenerationProgress = ref<{
   logs: string[]
   error?: string
 } | null>(null)
+
+// Массив ошибок для отображения
+const errors = ref<Array<{id: string, message: string, timestamp: number}>>([])
+
+// Функция для добавления ошибки
+function addError(message: string) {
+  const errorId = `error_${Date.now()}_${Math.random()}`
+  errors.value.push({
+    id: errorId,
+    message,
+    timestamp: Date.now()
+  })
+  
+  // Автоматически удаляем ошибку через 10 секунд
+  setTimeout(() => {
+    removeError(errorId)
+  }, 10000)
+}
+
+// Функция для удаления ошибки
+function removeError(errorId: string) {
+  const index = errors.value.findIndex(e => e.id === errorId)
+  if (index !== -1) {
+    errors.value.splice(index, 1)
+  }
+}
 const progressPollingInterval = ref<NodeJS.Timeout | null>(null)
 
 // Состояние для отслеживания загрузки изображений
@@ -821,7 +871,7 @@ async function loadReels() {
         scenario: reel.scenario,
         blocks: reel.blocks || [],
         backgroundMusic: reel.backgroundMusic,
-        audioSettings: reel.audioSettings || { voiceVolume: 80, musicVolume: 30, voiceSpeed: 1.0 },
+        audioSettings: reel.audioSettings || { voiceVolume: 80, musicVolume: 30, voiceSpeed: 1.0, voice: 'nova' },
         videoUrl: reel.videoUrl,
         status: reel.status,
         createdAt: reel.createdAt,
@@ -947,14 +997,16 @@ async function generateScenario() {
       generatingScenario.value = false
       showCreationForm.value = true
     }
-  } catch (error) {
-    console.error('Ошибка:', error)
-    showModal('error', 'Ошибка', 'Произошла ошибка при создании рилса. Попробуйте позже.')
-    generatingScenario.value = false
-    showCreationForm.value = true
-  } finally {
-    processing.value = false
-  }
+    } catch (error: any) {
+      console.error('Ошибка:', error)
+      const errorMessage = error?.message || 'Произошла ошибка при создании рилса. Попробуйте позже.'
+      addError(errorMessage)
+      showModal('error', 'Ошибка', errorMessage)
+      generatingScenario.value = false
+      showCreationForm.value = true
+    } finally {
+      processing.value = false
+    }
 }
 
 // Перегенерация видео
@@ -1060,7 +1112,7 @@ async function createVideo() {
         scenario: updatedReel.scenario,
         blocks: updatedReel.blocks || [],
         backgroundMusic: updatedReel.backgroundMusic,
-        audioSettings: updatedReel.audioSettings || { voiceVolume: 80, musicVolume: 30, voiceSpeed: 1.0 },
+        audioSettings: updatedReel.audioSettings || { voiceVolume: 80, musicVolume: 30, voiceSpeed: 1.0, voice: 'nova' },
         videoUrl: updatedReel.videoUrl,
         status: updatedReel.status,
         createdAt: updatedReel.createdAt,
@@ -1077,14 +1129,16 @@ async function createVideo() {
       generatingBlocks.value = false
       showCreationForm.value = true
     }
-  } catch (error) {
-    console.error('Ошибка:', error)
-    showModal('error', 'Ошибка', 'Произошла ошибка при создании видео')
-    generatingBlocks.value = false
-    showCreationForm.value = true
-  } finally {
-    processing.value = false
-  }
+    } catch (error: any) {
+      console.error('Ошибка:', error)
+      const errorMessage = error?.message || 'Произошла ошибка при создании видео'
+      addError(errorMessage)
+      showModal('error', 'Ошибка', errorMessage)
+      generatingBlocks.value = false
+      showCreationForm.value = true
+    } finally {
+      processing.value = false
+    }
 }
 
 // Обновление статуса рилса
@@ -1128,9 +1182,11 @@ async function deleteReel(id: number | string) {
       } else {
         showModal('error', 'Ошибка', 'Не удалось удалить рилс')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка:', error)
-      showModal('error', 'Ошибка', 'Произошла ошибка при удалении рилса')
+      const errorMessage = error?.message || 'Произошла ошибка при удалении рилса'
+      addError(errorMessage)
+      showModal('error', 'Ошибка', errorMessage)
     }
   })
 }
@@ -1181,10 +1237,12 @@ async function saveVideoBlocks(data: { blocks: VideoBlock[], audioSettings: Audi
     } else {
       showModal('error', 'Ошибка', 'Не удалось сохранить изменения')
     }
-  } catch (error) {
-    console.error('Ошибка:', error)
-    showModal('error', 'Ошибка', 'Произошла ошибка при сохранении')
-  }
+    } catch (error: any) {
+      console.error('Ошибка:', error)
+      const errorMessage = error?.message || 'Произошла ошибка при сохранении'
+      addError(errorMessage)
+      showModal('error', 'Ошибка', errorMessage)
+    }
 }
 
 // Сгенерировать финальное видео
@@ -1240,12 +1298,14 @@ async function generateFinalVideo(data: { blocks: VideoBlock[], audioSettings: A
       const errorData = await response.json().catch(() => ({}))
       showModal('error', 'Ошибка генерации', errorData.error || 'Не удалось запустить генерацию видео')
     }
-  } catch (error) {
-    console.error('Ошибка:', error)
-    showModal('error', 'Ошибка', 'Произошла ошибка при генерации видео')
-  } finally {
-    processing.value = false
-  }
+    } catch (error: any) {
+      console.error('Ошибка:', error)
+      const errorMessage = error?.message || 'Произошла ошибка при генерации видео'
+      addError(errorMessage)
+      showModal('error', 'Ошибка', errorMessage)
+    } finally {
+      processing.value = false
+    }
 }
 
 // Получение класса для статуса
@@ -1369,11 +1429,13 @@ async function startProgressPolling(reelId: string) {
           showModal('success', 'Готово!', 'Видео успешно создано!')
         } else if (data.status === 'blocks_created' && data.progress?.error) {
           stopProgressPolling()
+          addError(data.progress.error)
           showModal('error', 'Ошибка генерации', data.progress.error)
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error polling progress:', error)
+      addError(error?.message || 'Ошибка при проверке прогресса')
     }
   }
   
@@ -1466,10 +1528,12 @@ async function generateBlockImages(block: VideoBlock, blockIndex: number) {
       const errorData = await response.json().catch(() => ({}))
       showModal('error', 'Ошибка генерации', errorData.error || 'Не удалось запустить генерацию изображений')
     }
-  } catch (error) {
-    console.error('Error generating block images:', error)
-    showModal('error', 'Ошибка', 'Произошла ошибка при генерации изображений')
-  }
+    } catch (error: any) {
+      console.error('Error generating block images:', error)
+      const errorMessage = error?.message || 'Произошла ошибка при генерации изображений'
+      addError(errorMessage)
+      showModal('error', 'Ошибка', errorMessage)
+    }
 }
 
 // Опрос статуса генерации изображений
@@ -1527,8 +1591,9 @@ async function startImageGenerationPolling(reelId: string, blockIndex: number) {
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error polling image generation:', error)
+      addError(error?.message || 'Ошибка при проверке генерации изображений')
     }
     return false // Генерация продолжается
   }
@@ -1723,6 +1788,40 @@ onUnmounted(() => {
 .modal-leave-from .relative {
   transform: scale(1) translateY(0);
   opacity: 1;
+}
+
+/* Анимации для ошибок */
+.error-enter-active {
+  transition: all 0.3s ease;
+}
+
+.error-leave-active {
+  transition: all 0.3s ease;
+}
+
+.error-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.error-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease;
 }
 </style>
 
