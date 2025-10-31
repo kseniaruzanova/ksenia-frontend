@@ -267,6 +267,141 @@
           </p>
         </div>
 
+        <!-- Настройки аудио для блока -->
+        <div class="mb-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+            🎤 Тип аудио для блока
+          </h4>
+          
+          <!-- Выбор типа аудио -->
+          <div class="mb-4">
+            <select
+              :value="block.audioType ?? 'ai'"
+              @change="handleBlockChange(index, 'audioType', ($event.target as HTMLSelectElement).value)"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white font-medium"
+            >
+              <option value="ai">🤖 Озвучка с помощью ИИ</option>
+              <option value="user">🎙️ Моя запись</option>
+            </select>
+          </div>
+
+          <!-- Интерфейс для ИИ озвучки -->
+          <div v-if="(block.audioType ?? 'ai') === 'ai'" class="space-y-3">
+            <div class="text-sm text-gray-600 bg-white p-3 rounded-lg border border-purple-200">
+              <p class="font-medium mb-1">💡 Озвучка с помощью ИИ</p>
+              <p class="text-xs text-gray-500">
+                Текст в поле "Текст для озвучки" будет автоматически озвучен выбранным голосом ИИ при генерации видео.
+              </p>
+            </div>
+            <div v-if="block.audioUrl" class="flex items-center gap-2 p-2 bg-white rounded-lg">
+              <audio :src="getAudioUrl(block.audioUrl)" controls class="flex-1 h-8"></audio>
+            </div>
+          </div>
+
+          <!-- Интерфейс для пользовательской записи -->
+          <div v-else class="space-y-3">
+            <div class="text-sm text-gray-600 bg-white p-3 rounded-lg border border-purple-200">
+              <p class="font-medium mb-1">🎙️ Запись или загрузка аудио</p>
+              <p class="text-xs text-gray-500">
+                Вы можете записать свой голос или загрузить аудио файл (MP3, WAV, M4A, OGG, WEBM).
+              </p>
+            </div>
+
+            <!-- Запись аудио -->
+            <div class="bg-white p-4 rounded-lg border border-gray-200">
+              <div class="flex items-center gap-3 mb-3">
+                <button
+                  @click="toggleRecording(index)"
+                  :disabled="recordingState[index] === 'recording'"
+                  :class="[
+                    'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition',
+                    recordingState[index] === 'recording'
+                      ? 'bg-red-500 text-white cursor-not-allowed'
+                      : recordingState[index] === 'paused'
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-purple-500 hover:bg-purple-600 text-white'
+                  ]"
+                >
+                  <svg v-if="recordingState[index] === 'recording'" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zM12 9a1 1 0 10-2 0v2a1 1 0 102 0V9z" clip-rule="evenodd" />
+                  </svg>
+                  <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                  </svg>
+                  <span>{{ getRecordingButtonText(index) }}</span>
+                </button>
+                
+                <button
+                  v-if="recordingState[index] === 'recording'"
+                  @click="stopRecording(index)"
+                  class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+                >
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zM12 9a1 1 0 10-2 0v2a1 1 0 102 0V9z" clip-rule="evenodd" />
+                  </svg>
+                  Остановить
+                </button>
+              </div>
+
+              <div v-if="recordingState[index] === 'recording'" class="text-sm text-gray-600 flex items-center gap-2">
+                <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span>Запись: {{ formatTime(recordingTime[index] || 0) }}</span>
+              </div>
+
+              <div v-if="recordedAudio[index]" class="mt-3">
+                <p class="text-xs text-gray-600 mb-2">Предпросмотр записи:</p>
+                <audio :src="recordedAudio[index]" controls class="w-full h-8"></audio>
+                <button
+                  @click="saveRecording(index)"
+                  class="mt-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition"
+                >
+                  ✅ Сохранить запись
+                </button>
+                <button
+                  @click="discardRecording(index)"
+                  class="mt-2 ml-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition"
+                >
+                  ❌ Отменить
+                </button>
+              </div>
+            </div>
+
+            <!-- Загрузка аудио файла -->
+            <div class="bg-white p-4 rounded-lg border border-gray-200">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                📁 Загрузить аудио файл
+              </label>
+              <label class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-purple-500 transition bg-gray-50">
+                <input
+                  type="file"
+                  accept="audio/*"
+                  class="hidden"
+                  @change="(e) => handleAudioUpload(e, index)"
+                />
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                <span class="text-sm text-gray-700 font-medium">Выбрать файл</span>
+              </label>
+              <p class="text-xs text-gray-500 mt-2">
+                Поддерживаемые форматы: MP3, WAV, M4A, OGG, WEBM
+              </p>
+            </div>
+
+            <!-- Загруженное аудио -->
+            <div v-if="block.uploadedAudioUrl" class="bg-white p-3 rounded-lg border border-green-200">
+              <p class="text-xs text-gray-600 mb-2 font-medium">✅ Загруженное аудио:</p>
+              <audio :src="getAudioUrl(block.uploadedAudioUrl)" controls class="w-full h-8"></audio>
+              <button
+                @click="removeUploadedAudio(index)"
+                class="mt-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition"
+              >
+                🗑️ Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Загрузка собственных изображений -->
         <div class="mb-4">
           <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -451,6 +586,8 @@ interface VideoBlock {
   transition?: string
   scrollingText?: boolean
   audioUrl?: string
+  audioType?: 'ai' | 'user'
+  uploadedAudioUrl?: string
   order: number
   imageGenerationStatus?: 'pending' | 'generating' | 'completed' | 'failed'
   imageGenerationProgress?: number
@@ -501,7 +638,8 @@ const blocks = ref<VideoBlock[]>(
       scrollingText: block.scrollingText ?? false,
       textFontSize: block.textFontSize ?? 50,
       textPosition: block.textPosition || 'bottom',
-      textFont: block.textFont || 'Arial'
+      textFont: block.textFont || 'Arial',
+      audioType: block.audioType || 'ai'
     };
   })
 )
@@ -520,6 +658,13 @@ const blockErrors = ref<Record<number, string | null>>({})
 const promptSaveTimeout = ref<NodeJS.Timeout | null>(null)
 const blockSaveTimeout = ref<NodeJS.Timeout | null>(null)
 const audioSaveTimeout = ref<NodeJS.Timeout | null>(null)
+
+// Состояние записи аудио для каждого блока
+const recordingState = ref<Record<number, 'idle' | 'recording' | 'paused'>>({})
+const recordedAudio = ref<Record<number, string>>({})
+const recordingTime = ref<Record<number, number>>({})
+const mediaRecorders = ref<Record<number, MediaRecorder | null>>({})
+const recordingIntervals = ref<Record<number, NodeJS.Timeout | null>>({})
 
 const canGenerateVideo = computed(() => {
   return blocks.value.every(block => 
@@ -704,6 +849,198 @@ async function handleMusicUpload(event: Event) {
   } finally {
     uploading.value = false
   }
+}
+
+// Функция для получения полного URL аудио
+function getAudioUrl(audioPath: string): string {
+  if (audioPath.startsWith('http://') || audioPath.startsWith('https://') || audioPath.startsWith('blob:')) {
+    return audioPath
+  }
+  return `${config.public.apiBase}${audioPath}`
+}
+
+// Функции для записи аудио
+async function toggleRecording(blockIndex: number) {
+  if (recordingState.value[blockIndex] === 'recording') {
+    return // Уже записывается
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const mediaRecorder = new MediaRecorder(stream)
+    const chunks: Blob[] = []
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data)
+    }
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' })
+      const url = URL.createObjectURL(blob)
+      recordedAudio.value[blockIndex] = url
+      recordingState.value[blockIndex] = 'idle'
+      stream.getTracks().forEach(track => track.stop())
+    }
+
+    mediaRecorder.start()
+    mediaRecorders.value[blockIndex] = mediaRecorder
+    recordingState.value[blockIndex] = 'recording'
+    recordingTime.value[blockIndex] = 0
+
+    // Запускаем таймер
+    recordingIntervals.value[blockIndex] = setInterval(() => {
+      recordingTime.value[blockIndex] = (recordingTime.value[blockIndex] || 0) + 1
+    }, 1000)
+  } catch (error) {
+    console.error('Error starting recording:', error)
+    alert('Не удалось начать запись. Проверьте разрешения микрофона.')
+  }
+}
+
+function stopRecording(blockIndex: number) {
+  const recorder = mediaRecorders.value[blockIndex]
+  if (recorder && recordingState.value[blockIndex] === 'recording') {
+    recorder.stop()
+    if (recordingIntervals.value[blockIndex]) {
+      clearInterval(recordingIntervals.value[blockIndex]!)
+      recordingIntervals.value[blockIndex] = null
+    }
+  }
+}
+
+function getRecordingButtonText(blockIndex: number): string {
+  const state = recordingState.value[blockIndex] || 'idle'
+  switch (state) {
+    case 'recording':
+      return 'Запись...'
+    case 'paused':
+      return 'Продолжить'
+    default:
+      return 'Начать запись'
+  }
+}
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+async function saveRecording(blockIndex: number) {
+  if (!recordedAudio.value[blockIndex]) return
+
+  try {
+    const audioBlob = await fetch(recordedAudio.value[blockIndex]).then(r => r.blob())
+    const formData = new FormData()
+    formData.append('audio', audioBlob, 'recording.webm')
+
+    if (!props.reelId) {
+      alert('Не удалось определить идентификатор рилса')
+      return
+    }
+
+    uploading.value = true
+    const response = await fetch(`${config.public.apiBase}/api/reels/${props.reelId}/blocks/${blockIndex}/upload-audio`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`
+      },
+      body: formData
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      blocks.value[blockIndex].uploadedAudioUrl = data.audioUrl
+      blocks.value[blockIndex].audioType = 'user'
+      
+      // Очищаем временные данные
+      URL.revokeObjectURL(recordedAudio.value[blockIndex])
+      recordedAudio.value[blockIndex] = ''
+      recordingState.value[blockIndex] = 'idle'
+      
+      // Сохраняем изменения блока
+      await handleBlockChange(blockIndex, 'uploadedAudioUrl', data.audioUrl)
+      await handleBlockChange(blockIndex, 'audioType', 'user')
+      
+      alert('Запись успешно сохранена!')
+    } else {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error || 'Не удалось сохранить запись')
+    }
+  } catch (error: any) {
+    console.error('Error saving recording:', error)
+    alert(`Ошибка при сохранении записи: ${error.message}`)
+  } finally {
+    uploading.value = false
+  }
+}
+
+function discardRecording(blockIndex: number) {
+  if (recordedAudio.value[blockIndex]) {
+    URL.revokeObjectURL(recordedAudio.value[blockIndex])
+    recordedAudio.value[blockIndex] = ''
+  }
+  recordingState.value[blockIndex] = 'idle'
+  recordingTime.value[blockIndex] = 0
+  if (recordingIntervals.value[blockIndex]) {
+    clearInterval(recordingIntervals.value[blockIndex]!)
+    recordingIntervals.value[blockIndex] = null
+  }
+}
+
+// Загрузка аудио файла для блока
+async function handleAudioUpload(event: Event, blockIndex: number) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  if (!props.reelId) {
+    alert('Не удалось определить идентификатор рилса')
+    return
+  }
+
+  uploading.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('audio', file)
+
+    const response = await fetch(`${config.public.apiBase}/api/reels/${props.reelId}/blocks/${blockIndex}/upload-audio`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`
+      },
+      body: formData
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      blocks.value[blockIndex].uploadedAudioUrl = data.audioUrl
+      blocks.value[blockIndex].audioType = 'user'
+      
+      // Сохраняем изменения блока
+      await handleBlockChange(blockIndex, 'uploadedAudioUrl', data.audioUrl)
+      await handleBlockChange(blockIndex, 'audioType', 'user')
+      
+      alert('Аудио файл успешно загружен!')
+    } else {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error || 'Не удалось загрузить аудио')
+    }
+  } catch (error: any) {
+    console.error('Error uploading audio:', error)
+    alert(`Ошибка при загрузке аудио: ${error.message}`)
+  } finally {
+    uploading.value = false
+    // Очищаем input
+    ;(event.target as HTMLInputElement).value = ''
+  }
+}
+
+function removeUploadedAudio(blockIndex: number) {
+  blocks.value[blockIndex].uploadedAudioUrl = undefined
+  blocks.value[blockIndex].audioType = 'ai'
+  handleBlockChange(blockIndex, 'uploadedAudioUrl', undefined)
+  handleBlockChange(blockIndex, 'audioType', 'ai')
 }
 
 // Сохранение промптов блока
