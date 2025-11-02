@@ -199,6 +199,8 @@
 </template>
 
 <script setup>
+import { useProductContent } from '~/composables/useProductContent';
+
 const props = defineProps({
   productType: {
     type: String,
