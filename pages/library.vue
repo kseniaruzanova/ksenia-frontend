@@ -522,81 +522,141 @@
         </div>
 
         <!-- Модальное окно просмотра видео -->
-        <div v-if="showVideoModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-0 sm:p-4 z-50">
-          <div class="bg-black rounded-none sm:rounded-lg w-full h-full sm:h-auto sm:max-w-4xl relative flex flex-col">
-            <div class="p-3 sm:p-4 flex justify-between items-center border-b border-gray-800">
-              <h3 class="text-white text-base sm:text-lg font-semibold pr-2 line-clamp-1">{{ currentVideo.title }}</h3>
-              <button 
-                @click="closeVideoModal"
-                class="text-white hover:text-gray-300 active:text-gray-400 p-2 touch-manipulation flex-shrink-0"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            
-            <div class="relative flex-1 flex items-center">
-              <div v-if="videoLoading" class="absolute inset-0 flex items-center justify-center bg-black z-10">
-                <div class="text-white text-center px-4">
-                  <div class="w-12 h-12 sm:w-16 sm:h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin mx-auto mb-4"></div>
-                  <p class="text-sm sm:text-base">Загрузка видео...</p>
-                  <p class="text-xs sm:text-sm text-gray-400 mt-2">Если видео не загружается, попробуйте позже</p>
+        <Transition name="video-modal">
+          <div v-if="showVideoModal" class="fixed inset-0 bg-black bg-opacity-95 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4 z-50" @click.self="closeVideoModal">
+            <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-none sm:rounded-2xl w-full h-full sm:h-auto sm:max-w-5xl relative flex flex-col shadow-2xl overflow-hidden video-modal-content">
+              <!-- Заголовок с улучшенным дизайном -->
+              <div class="p-4 sm:p-6 flex justify-between items-start bg-gradient-to-r from-gray-900/95 to-black/95 backdrop-blur-sm border-b border-gray-700/50">
+                <div class="flex-1 min-w-0 pr-3">
+                  <h3 class="text-white text-lg sm:text-2xl font-bold pr-2 mb-1 line-clamp-2">{{ currentVideo.title }}</h3>
+                  <div v-if="currentVideo.playlistId" class="flex items-center mt-2">
+                    <svg class="w-4 h-4 text-blue-400 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
+                    </svg>
+                    <span class="text-xs sm:text-sm text-blue-400 font-medium truncate">
+                      {{ playlists.find(p => p._id === currentVideo.playlistId)?.name || 'Курс' }}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              
-              <div v-if="videoError" class="absolute inset-0 flex items-center justify-center bg-black z-10">
-                <div class="text-white text-center p-4">
-                  <svg class="w-12 h-12 sm:w-16 sm:h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <button 
+                  @click="closeVideoModal"
+                  class="text-gray-300 hover:text-white hover:bg-white/10 active:bg-white/20 p-2.5 rounded-full transition-all duration-200 touch-manipulation flex-shrink-0 group"
+                  title="Закрыть"
+                >
+                  <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
-                  <h4 class="text-lg sm:text-xl font-bold mb-2">Ошибка загрузки видео</h4>
-                  <p class="text-sm sm:text-base mb-4">Видео не загрузилось в течение отведенного времени.</p>
-                  <button 
-                    @click="retryVideoLoad"
-                    class="px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 active:bg-blue-800 touch-manipulation"
-                  >
-                    Попробовать снова
-                  </button>
+                </button>
+              </div>
+              
+              <!-- Область видео -->
+              <div class="relative flex-1 flex items-center bg-black/50 min-h-0">
+                <!-- Состояние загрузки с улучшенным дизайном -->
+                <Transition name="fade">
+                  <div v-if="videoLoading" class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-black/90 to-gray-900/90 z-20 backdrop-blur-sm">
+                    <div class="text-white text-center px-6 py-8">
+                      <div class="relative w-20 h-20 mx-auto mb-6">
+                        <div class="absolute inset-0 border-4 border-blue-500/30 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+                        <div class="absolute inset-2 border-4 border-blue-400/20 rounded-full"></div>
+                        <div class="absolute inset-2 border-4 border-transparent border-t-blue-400 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 0.8s;"></div>
+                      </div>
+                      <p class="text-base sm:text-lg font-medium mb-2">Загрузка видео...</p>
+                      <p class="text-xs sm:text-sm text-gray-400">Пожалуйста, подождите</p>
+                      <div v-if="videoProgress > 0" class="mt-4 w-64 mx-auto bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-blue-500 h-full transition-all duration-300 rounded-full" :style="{ width: videoProgress + '%' }"></div>
+                      </div>
+                    </div>
+                  </div>
+                </Transition>
+                
+                <!-- Состояние ошибки с улучшенным дизайном -->
+                <Transition name="fade">
+                  <div v-if="videoError" class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-900/20 to-black/90 z-20 backdrop-blur-sm">
+                    <div class="text-white text-center p-6 sm:p-8 max-w-md">
+                      <div class="w-20 h-20 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center">
+                        <svg class="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                      </div>
+                      <h4 class="text-xl sm:text-2xl font-bold mb-3">Ошибка загрузки</h4>
+                      <p class="text-sm sm:text-base text-gray-300 mb-6">Видео не загрузилось в течение отведенного времени. Проверьте подключение к интернету и попробуйте снова.</p>
+                      <button 
+                        @click="retryVideoLoad"
+                        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 active:scale-95 transition-all duration-200 touch-manipulation font-medium shadow-lg hover:shadow-blue-500/50"
+                      >
+                        Попробовать снова
+                      </button>
+                    </div>
+                  </div>
+                </Transition>
+                
+                <!-- Видео контент -->
+                <div class="w-full relative">
+                  <div v-if="currentVideo.type === 'file'" class="w-full bg-black">
+                    <video 
+                      ref="videoPlayer"
+                      :src="videoSource" 
+                      controls 
+                      class="w-full h-auto max-h-[60vh] sm:max-h-[70vh] object-contain"
+                      preload="auto"
+                      playsinline
+                      @loadstart="handleVideoLoadStart"
+                      @progress="handleVideoProgress"
+                      @canplay="handleVideoCanPlay"
+                      @error="handleVideoError"
+                      @stalled="handleVideoStalled"
+                    ></video>
+                  </div>
+                  
+                  <div v-else-if="currentVideo.type === 'link'" class="w-full bg-black">
+                    <div class="relative w-full" style="padding-bottom: 56.25%;">
+                      <iframe 
+                        :src="getEmbedUrl(currentVideo.source)" 
+                        class="absolute top-0 left-0 w-full h-full"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                        @load="handleIframeLoad"
+                      ></iframe>
+                    </div>
+                  </div>
                 </div>
               </div>
               
-              <div v-if="currentVideo.type === 'file'" class="w-full">
-                <video 
-                  ref="videoPlayer"
-                  :src="videoSource" 
-                  controls 
-                  class="w-full h-auto max-h-[60vh] sm:max-h-none"
-                  preload="auto"
-                  playsinline
-                  @loadstart="handleVideoLoadStart"
-                  @progress="handleVideoProgress"
-                  @canplay="handleVideoCanPlay"
-                  @error="handleVideoError"
-                  @stalled="handleVideoStalled"
-                ></video>
-              </div>
-              
-              <div v-else-if="currentVideo.type === 'link'" class="w-full">
-                <div class="aspect-w-16 aspect-h-9">
-                  <iframe 
-                    :src="getEmbedUrl(currentVideo.source)" 
-                    class="w-full h-[60vh] sm:h-96"
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen
-                    @load="handleIframeLoad"
-                  ></iframe>
+              <!-- Описание с улучшенным дизайном -->
+              <div v-if="currentVideo.description" class="p-4 sm:p-6 bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-sm border-t border-gray-700/50">
+                <div class="flex items-start">
+                  <svg class="w-5 h-5 text-gray-400 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs sm:text-sm text-gray-400 mb-2 font-medium uppercase tracking-wider">Описание</p>
+                    <p class="text-sm sm:text-base text-gray-200 leading-relaxed whitespace-pre-wrap">{{ currentVideo.description }}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div class="p-3 sm:p-4 text-white bg-gray-900 max-h-32 sm:max-h-none overflow-y-auto">
-              <p class="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">Описание:</p>
-              <p class="text-sm sm:text-base">{{ currentVideo.description }}</p>
+              
+              <!-- Информация о видео -->
+              <div class="px-4 sm:px-6 py-3 bg-black/50 border-t border-gray-800/50 flex items-center justify-between text-xs sm:text-sm text-gray-400">
+                <div class="flex items-center space-x-4">
+                  <span class="flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    {{ formatDate(currentVideo.createdAt) }}
+                  </span>
+                  <span class="flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    {{ currentVideo.type === 'file' ? 'Видео файл' : 'Внешнее видео' }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </Transition>
       </div>
     </div>
   </div>
@@ -1254,5 +1314,63 @@ onUnmounted(() => {
 /* Плавная анимация для поворота стрелки */
 .rotate-180 {
   transform: rotate(180deg);
+}
+
+/* Анимации для модального окна просмотра видео */
+.video-modal-enter-active,
+.video-modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.video-modal-enter-active .video-modal-content,
+.video-modal-leave-active .video-modal-content {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.video-modal-enter-from,
+.video-modal-leave-to {
+  opacity: 0;
+}
+
+.video-modal-enter-from .video-modal-content,
+.video-modal-leave-to .video-modal-content {
+  transform: scale(0.95) translateY(20px);
+  opacity: 0;
+}
+
+.video-modal-enter-to .video-modal-content,
+.video-modal-leave-from .video-modal-content {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* Анимация fade для состояний загрузки и ошибки */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Кастомный скроллбар для описания */
+div::-webkit-scrollbar {
+  width: 6px;
+}
+
+div::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+div::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+div::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>
