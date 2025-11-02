@@ -7,7 +7,7 @@ RUN npm install
 
 COPY . .
 
-RUN npm install @nuxtjs/tailwindcss
+RUN npm run postinstall
 RUN npm run build
 
 EXPOSE 3000
