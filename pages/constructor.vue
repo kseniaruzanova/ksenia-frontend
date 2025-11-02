@@ -141,7 +141,7 @@
               <div class="p-6">
                 <div class="flex items-center mb-4">
                   <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
-                    <span class="text-2xl">👤</span>
+                    <span class="text-2xl">🌟</span>
                   </div>
                   <div>
                     <h3 class="text-lg font-semibold text-gray-800">Архетип и тень</h3>
@@ -151,16 +151,16 @@
                 <p class="text-gray-600 text-sm mb-4">
                   Исследуйте свои архетипы и тени для глубокого понимания личности и потенциала.
                 </p>
-                <template v-if="isProductAvailable('archetype')">
-                  <button 
-                    disabled
-                    class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 text-sm font-medium rounded-md cursor-not-allowed"
+                <template v-if="isProductAvailable('archetypeShadow')">
+                  <NuxtLink 
+                    to="/magic/archetypeShadow" 
+                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                   >
-                    Скоро
+                    Рассчитать
                     <svg class="ml-2 -mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
-                  </button>
+                  </NuxtLink>
                 </template>
                 <template v-else>
                   <div class="flex items-center text-gray-500 cursor-not-allowed">
@@ -369,6 +369,7 @@ const productAvailability = {
   mistakesIncarnation: ['pro'],
   future: ['pro'],
   archetype: ['pro'],
+  archetypeShadow: ['pro'],
   arcanumRealization: ['pro'],
   awakeningCodes: ['pro'],
   karmicTail: ['pro'],
