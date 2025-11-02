@@ -322,27 +322,12 @@
             </div>
           </div>
 
-          <!-- Информация о конструкторе -->
-          <div class="mt-12 bg-white rounded-lg shadow-lg p-8">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6">📋 О конструкторе продуктов</h2>
-            <div class="prose max-w-none">
-              <p class="text-gray-700 mb-4">
-                <strong>Конструктор продуктов</strong> — это ваш персональный инструмент для создания уникальных расчетов и прогнозов на основе таро, астрологии и психологии.
-              </p>
-              <p class="text-gray-700 mb-4">
-                Каждый расчет учитывает:
-              </p>
-              <ul class="list-disc list-inside text-gray-700 space-y-2 mb-4">
-                <li>Вашу уникальную дату рождения</li>
-                <li>Таро коды и матрицы</li>
-                <li>Энергетические циклы и периоды</li>
-                <li>Персональные рекомендации и стратегии</li>
-              </ul>
-              <p class="text-gray-700">
-                Результаты предоставляются в виде подробных PDF-документов с практическими советами и интерпретациями.
-              </p>
-            </div>
-          </div>
+          <!-- Контент продукта -->
+          <ProductContentBlock 
+            product-type="constructor" 
+            product-id="main" 
+            product-display-name="Конструктор продуктов" 
+          />
           
         </div>
       </div>

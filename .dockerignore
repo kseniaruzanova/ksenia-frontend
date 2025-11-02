@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.nuxt
+.output
+.DS_Store
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+README.md
+
