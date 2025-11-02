@@ -1178,7 +1178,6 @@ function handleAudioPreviewError(event: Event, blockIndex: number) {
     recordedAudio.value[blockIndex] = newUrl
     console.log('✅ Recreated blob URL:', newUrl)
   } else {
-    alert('Не удалось загрузить запись для предпросмотра. Попробуйте сохранить и проверить запись позже.')
   }
 }
 
