@@ -674,9 +674,11 @@ const audioSaveTimeout = ref<NodeJS.Timeout | null>(null)
 // Состояние записи аудио для каждого блока
 const recordingState = ref<Record<number, 'idle' | 'recording' | 'paused'>>({})
 const recordedAudio = ref<Record<number, string>>({})
+const recordedAudioBlob = ref<Record<number, Blob | null>>({}) // Сохраняем blob для отправки на сервер
 const recordingTime = ref<Record<number, number>>({})
 const mediaRecorders = ref<Record<number, MediaRecorder | null>>({})
 const recordingIntervals = ref<Record<number, NodeJS.Timeout | null>>({})
+const recordingChunks = ref<Record<number, Blob[]>>({}) // Сохраняем chunks для каждого блока
 
 const canGenerateVideo = computed(() => {
   return blocks.value.every(block => 
@@ -955,49 +957,99 @@ async function toggleRecording(blockIndex: number) {
     const options = mimeType ? { mimeType } : undefined
     
     console.log(`🎙️ Creating MediaRecorder with options:`, options)
+    
+    // Инициализируем chunks для этого блока
+    recordingChunks.value[blockIndex] = []
+    
     const mediaRecorder = new MediaRecorder(stream, options)
-    const chunks: Blob[] = []
 
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        console.log(`📦 Audio chunk received: ${e.data.size} bytes`)
-        chunks.push(e.data)
+      if (e.data && e.data.size > 0) {
+        console.log(`📦 Audio chunk received: ${e.data.size} bytes, type: ${e.data.type}`)
+        recordingChunks.value[blockIndex].push(e.data)
       }
     }
 
     mediaRecorder.onstop = () => {
-      console.log(`🛑 Recording stopped. Total chunks: ${chunks.length}`)
-      const mimeType = chunks[0]?.type || 'audio/webm'
-      const blob = new Blob(chunks, { type: mimeType })
+      console.log(`🛑 Recording stopped. Total chunks: ${recordingChunks.value[blockIndex].length}`)
+      
+      if (recordingChunks.value[blockIndex].length === 0) {
+        console.error('❌ No audio chunks recorded!')
+        alert('Ошибка: не удалось записать аудио. Попробуйте еще раз.')
+        recordingState.value[blockIndex] = 'idle'
+        stream.getTracks().forEach(track => track.stop())
+        return
+      }
+      
+      // Определяем MIME тип из первого chunk или используем дефолтный
+      const detectedMimeType = recordingChunks.value[blockIndex][0]?.type || mimeType || 'audio/webm'
+      console.log(`📦 Using MIME type: ${detectedMimeType}`)
+      
+      const blob = new Blob(recordingChunks.value[blockIndex], { type: detectedMimeType })
       console.log(`📦 Created blob: ${blob.size} bytes, type: ${blob.type}`)
+      
+      if (blob.size === 0) {
+        console.error('❌ Created blob is empty!')
+        alert('Ошибка: записанный файл пуст. Попробуйте еще раз.')
+        recordingState.value[blockIndex] = 'idle'
+        stream.getTracks().forEach(track => track.stop())
+        return
+      }
+      
+      // Сохраняем blob для последующей отправки
+      recordedAudioBlob.value[blockIndex] = blob
+      
+      // Создаем URL для предпросмотра
       const url = URL.createObjectURL(blob)
       recordedAudio.value[blockIndex] = url
       recordingState.value[blockIndex] = 'idle'
+      
       stream.getTracks().forEach(track => {
         track.stop()
         console.log('🔇 Media track stopped')
       })
+      
+      console.log('✅ Recording completed successfully')
     }
 
     mediaRecorder.onerror = (event: any) => {
       console.error('❌ MediaRecorder error:', event.error)
-      alert(`Ошибка записи: ${event.error?.message || 'Неизвестная ошибка'}`)
+      const errorMsg = event.error?.message || 'Неизвестная ошибка'
+      alert(`Ошибка записи: ${errorMsg}`)
       recordingState.value[blockIndex] = 'idle'
       stream.getTracks().forEach(track => track.stop())
+      
+      // Очищаем интервал, если он был запущен
+      if (recordingIntervals.value[blockIndex]) {
+        clearInterval(recordingIntervals.value[blockIndex]!)
+        recordingIntervals.value[blockIndex] = null
+      }
+    }
+
+    mediaRecorder.onstart = () => {
+      console.log('✅ MediaRecorder started successfully')
     }
 
     console.log('▶️ Starting MediaRecorder...')
-    mediaRecorder.start(1000) // Собираем данные каждую секунду
-    mediaRecorders.value[blockIndex] = mediaRecorder
-    recordingState.value[blockIndex] = 'recording'
-    recordingTime.value[blockIndex] = 0
+    
+    // Проверяем состояние MediaRecorder перед стартом
+    if (mediaRecorder.state === 'inactive') {
+      mediaRecorder.start(1000) // Собираем данные каждую секунду
+      mediaRecorders.value[blockIndex] = mediaRecorder
+      recordingState.value[blockIndex] = 'recording'
+      recordingTime.value[blockIndex] = 0
 
-    // Запускаем таймер
-    recordingIntervals.value[blockIndex] = setInterval(() => {
-      recordingTime.value[blockIndex] = (recordingTime.value[blockIndex] || 0) + 1
-    }, 1000)
+      // Запускаем таймер
+      recordingIntervals.value[blockIndex] = setInterval(() => {
+        if (recordingState.value[blockIndex] === 'recording') {
+          recordingTime.value[blockIndex] = (recordingTime.value[blockIndex] || 0) + 1
+        }
+      }, 1000)
 
-    console.log('✅ Recording started successfully')
+      console.log('✅ Recording started successfully, state:', mediaRecorder.state)
+    } else {
+      console.warn('⚠️ MediaRecorder is not in inactive state:', mediaRecorder.state)
+    }
   } catch (error: any) {
     console.error('❌ Error starting recording:', error)
     
@@ -1025,10 +1077,20 @@ async function toggleRecording(blockIndex: number) {
 function stopRecording(blockIndex: number) {
   const recorder = mediaRecorders.value[blockIndex]
   if (recorder && recordingState.value[blockIndex] === 'recording') {
-    recorder.stop()
+    console.log('🛑 Stopping recording...', 'State:', recorder.state)
+    
+    // Останавливаем таймер
     if (recordingIntervals.value[blockIndex]) {
       clearInterval(recordingIntervals.value[blockIndex]!)
       recordingIntervals.value[blockIndex] = null
+    }
+    
+    // Останавливаем запись
+    if (recorder.state === 'recording' || recorder.state === 'paused') {
+      recorder.stop()
+      console.log('✅ Recorder stop() called, final state:', recorder.state)
+    } else {
+      console.warn('⚠️ Recorder is not in recording/paused state:', recorder.state)
     }
   }
 }
@@ -1052,12 +1114,50 @@ function formatTime(seconds: number): string {
 }
 
 async function saveRecording(blockIndex: number) {
-  if (!recordedAudio.value[blockIndex]) return
+  console.log('💾 Starting save recording for block', blockIndex)
+  
+  // Проверяем наличие blob
+  if (!recordedAudioBlob.value[blockIndex] && !recordedAudio.value[blockIndex]) {
+    alert('Нет записи для сохранения')
+    return
+  }
 
   try {
-    const audioBlob = await fetch(recordedAudio.value[blockIndex]).then(r => r.blob())
+    let audioBlob: Blob
+    
+    // Используем сохраненный blob, если есть, иначе получаем из URL
+    if (recordedAudioBlob.value[blockIndex]) {
+      audioBlob = recordedAudioBlob.value[blockIndex]!
+      console.log('✅ Using saved blob:', audioBlob.size, 'bytes, type:', audioBlob.type)
+    } else {
+      console.log('⚠️ Blob not found, fetching from URL...')
+      const response = await fetch(recordedAudio.value[blockIndex])
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio blob: ${response.status} ${response.statusText}`)
+      }
+      audioBlob = await response.blob()
+      console.log('✅ Fetched blob:', audioBlob.size, 'bytes, type:', audioBlob.type)
+    }
+    
+    if (!audioBlob || audioBlob.size === 0) {
+      throw new Error('Записанный файл пуст')
+    }
+
+    // Определяем расширение файла из MIME типа
+    let fileExtension = 'webm'
+    if (audioBlob.type.includes('ogg')) {
+      fileExtension = 'ogg'
+    } else if (audioBlob.type.includes('mp4')) {
+      fileExtension = 'm4a'
+    } else if (audioBlob.type.includes('wav')) {
+      fileExtension = 'wav'
+    }
+    
+    const fileName = `recording.${fileExtension}`
+    console.log('📤 Uploading file:', fileName, 'Size:', audioBlob.size, 'Type:', audioBlob.type)
+    
     const formData = new FormData()
-    formData.append('audio', audioBlob, 'recording.webm')
+    formData.append('audio', audioBlob, fileName)
 
     if (!props.reelId) {
       alert('Не удалось определить идентификатор рилса')
@@ -1065,22 +1165,35 @@ async function saveRecording(blockIndex: number) {
     }
 
     uploading.value = true
-    const response = await fetch(`${config.public.apiBase}/api/reels/${props.reelId}/blocks/${blockIndex}/upload-audio`, {
+    
+    const uploadUrl = `${config.public.apiBase}/api/reels/${props.reelId}/blocks/${blockIndex}/upload-audio`
+    console.log('📡 Uploading to:', uploadUrl)
+    
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.value}`
+        // НЕ добавляем Content-Type - браузер установит его автоматически с boundary для FormData
       },
       body: formData
     })
 
+    console.log('📡 Response status:', response.status, response.statusText)
+
     if (response.ok) {
       const data = await response.json()
+      console.log('✅ Upload successful:', data)
+      
       blocks.value[blockIndex].uploadedAudioUrl = data.audioUrl
       blocks.value[blockIndex].audioType = 'user'
       
       // Очищаем временные данные
-      URL.revokeObjectURL(recordedAudio.value[blockIndex])
+      if (recordedAudio.value[blockIndex]) {
+        URL.revokeObjectURL(recordedAudio.value[blockIndex])
+      }
       recordedAudio.value[blockIndex] = ''
+      recordedAudioBlob.value[blockIndex] = null
+      recordingChunks.value[blockIndex] = []
       recordingState.value[blockIndex] = 'idle'
       
       // Сохраняем изменения блока
@@ -1089,27 +1202,65 @@ async function saveRecording(blockIndex: number) {
       
       alert('Запись успешно сохранена!')
     } else {
-      const error = await response.json().catch(() => ({}))
-      throw new Error(error.error || 'Не удалось сохранить запись')
+      const errorText = await response.text()
+      console.error('❌ Upload failed:', response.status, errorText)
+      let errorData
+      try {
+        errorData = JSON.parse(errorText)
+      } catch {
+        errorData = { error: errorText || 'Неизвестная ошибка сервера' }
+      }
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
     }
   } catch (error: any) {
-    console.error('Error saving recording:', error)
-    alert(`Ошибка при сохранении записи: ${error.message}`)
+    console.error('❌ Error saving recording:', error)
+    let errorMessage = 'Ошибка при сохранении записи: '
+    
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      errorMessage += 'Не удалось подключиться к серверу. Проверьте интернет-соединение.'
+    } else if (error.message) {
+      errorMessage += error.message
+    } else {
+      errorMessage += 'Неизвестная ошибка'
+    }
+    
+    alert(errorMessage)
   } finally {
     uploading.value = false
   }
 }
 
 function discardRecording(blockIndex: number) {
+  // Останавливаем запись, если она идет
+  if (recordingState.value[blockIndex] === 'recording') {
+    stopRecording(blockIndex)
+  }
+  
+  // Освобождаем ресурсы
   if (recordedAudio.value[blockIndex]) {
     URL.revokeObjectURL(recordedAudio.value[blockIndex])
     recordedAudio.value[blockIndex] = ''
   }
+  
+  // Очищаем данные
+  recordedAudioBlob.value[blockIndex] = null
+  recordingChunks.value[blockIndex] = []
   recordingState.value[blockIndex] = 'idle'
   recordingTime.value[blockIndex] = 0
+  
+  // Очищаем интервал
   if (recordingIntervals.value[blockIndex]) {
     clearInterval(recordingIntervals.value[blockIndex]!)
     recordingIntervals.value[blockIndex] = null
+  }
+  
+  // Останавливаем медиа-рекордер
+  if (mediaRecorders.value[blockIndex]) {
+    const recorder = mediaRecorders.value[blockIndex]
+    if (recorder.state === 'recording' || recorder.state === 'paused') {
+      recorder.stop()
+    }
+    mediaRecorders.value[blockIndex] = null
   }
 }
 
