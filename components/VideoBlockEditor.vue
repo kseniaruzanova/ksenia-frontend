@@ -361,7 +361,17 @@
               </div>
 
               <div v-if="recordedAudio[index]" class="mt-3">
-                <p class="text-xs text-gray-600 mb-2">Предпросмотр записи:</p>
+                <!-- Индикатор автоматического сохранения -->
+                <div v-if="isAutoSaving[index]" class="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div class="flex items-center gap-2 text-sm text-blue-700">
+                    <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Сохранение записи...</span>
+                  </div>
+                </div>
+                
+                <p class="text-xs text-gray-600 mb-2">
+                  {{ isAutoSaving[index] ? 'Запись сохраняется...' : 'Предпросмотр записи:' }}
+                </p>
                 <audio 
                   :src="recordedAudio[index]" 
                   controls 
@@ -371,18 +381,43 @@
                   @canplay="() => console.log('✅ Audio can play for block', index)"
                   preload="metadata"
                 ></audio>
-                <button
-                  @click="saveRecording(index)"
-                  class="mt-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition"
-                >
-                  ✅ Сохранить запись
-                </button>
-                <button
-                  @click="discardRecording(index)"
-                  class="mt-2 ml-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition"
-                >
-                  ❌ Отменить
-                </button>
+                
+                <!-- Показываем кнопки только если запись еще не сохранена автоматически -->
+                <div v-if="!blocks[index].uploadedAudioUrl || !isAutoSaving[index]" class="mt-2 flex gap-2">
+                  <button
+                    v-if="!blocks[index].uploadedAudioUrl"
+                    @click="saveRecording(index)"
+                    :disabled="isAutoSaving[index]"
+                    :class="[
+                      'px-4 py-2 rounded-lg text-sm font-medium transition',
+                      isAutoSaving[index]
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-green-500 hover:bg-green-600 text-white'
+                    ]"
+                  >
+                    ✅ Сохранить запись
+                  </button>
+                  <button
+                    @click="discardRecording(index)"
+                    :disabled="isAutoSaving[index]"
+                    :class="[
+                      'px-4 py-2 rounded-lg text-sm font-medium transition',
+                      isAutoSaving[index]
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-gray-500 hover:bg-gray-600 text-white'
+                    ]"
+                  >
+                    ❌ Удалить запись
+                  </button>
+                </div>
+                
+                <!-- Индикатор успешного сохранения -->
+                <div v-if="blocks[index].uploadedAudioUrl && !isAutoSaving[index]" class="mt-2 text-xs text-green-600 flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Запись сохранена на сервере</span>
+                </div>
               </div>
             </div>
 
@@ -687,6 +722,7 @@ const recordingTime = ref<Record<number, number>>({})
 const mediaRecorders = ref<Record<number, MediaRecorder | null>>({})
 const recordingIntervals = ref<Record<number, NodeJS.Timeout | null>>({})
 const recordingChunks = ref<Record<number, Blob[]>>({}) // Сохраняем chunks для каждого блока
+const isAutoSaving = ref<Record<number, boolean>>({}) // Отслеживаем автоматическое сохранение
 
 const canGenerateVideo = computed(() => {
   return blocks.value.every(block => 
@@ -1032,19 +1068,10 @@ async function toggleRecording(blockIndex: number) {
           URL.revokeObjectURL(recordedAudio.value[blockIndex])
         }
         
-        // Создаем новый URL для предпросмотра
+        // Создаем новый URL для предпросмотра (временный, до сохранения на сервер)
         const url = URL.createObjectURL(blob)
         recordedAudio.value[blockIndex] = url
         console.log('✅ Created blob URL for preview:', url)
-        
-        // Проверяем, что audio может быть воспроизведен
-        const testAudio = new Audio(url)
-        testAudio.oncanplay = () => {
-          console.log('✅ Audio can be played, duration:', testAudio.duration)
-        }
-        testAudio.onerror = (e) => {
-          console.error('❌ Audio preview error:', e)
-        }
         
         recordingState.value[blockIndex] = 'idle'
         
@@ -1054,6 +1081,19 @@ async function toggleRecording(blockIndex: number) {
         })
         
         console.log('✅ Recording completed successfully')
+        
+        // Автоматически сохраняем запись на сервер
+        if (props.reelId) {
+          console.log('💾 Auto-saving recording...')
+          isAutoSaving.value[blockIndex] = true
+          saveRecording(blockIndex).catch((error) => {
+            console.error('❌ Auto-save failed:', error)
+            isAutoSaving.value[blockIndex] = false
+            // Не показываем alert, так как пользователь может вручную сохранить позже
+          })
+        } else {
+          console.warn('⚠️ Cannot auto-save: reelId is missing')
+        }
       }, 100) // Небольшая задержка для завершения записи
     }
 
@@ -1255,20 +1295,31 @@ async function saveRecording(blockIndex: number) {
       blocks.value[blockIndex].uploadedAudioUrl = data.audioUrl
       blocks.value[blockIndex].audioType = 'user'
       
-      // Очищаем временные данные
-      if (recordedAudio.value[blockIndex]) {
+      // Освобождаем старый blob URL
+      if (recordedAudio.value[blockIndex] && recordedAudio.value[blockIndex].startsWith('blob:')) {
         URL.revokeObjectURL(recordedAudio.value[blockIndex])
       }
-      recordedAudio.value[blockIndex] = ''
+      
+      // Обновляем предпросмотр с URL с сервера
+      recordedAudio.value[blockIndex] = getAudioUrl(data.audioUrl)
+      
+      // Сохраняем флаг автоматического сохранения перед очисткой
+      const wasAutoSaving = isAutoSaving.value[blockIndex]
+      
+      // Очищаем временные данные
       recordedAudioBlob.value[blockIndex] = null
       recordingChunks.value[blockIndex] = []
       recordingState.value[blockIndex] = 'idle'
+      isAutoSaving.value[blockIndex] = false
       
       // Сохраняем изменения блока
       await handleBlockChange(blockIndex, 'uploadedAudioUrl', data.audioUrl)
       await handleBlockChange(blockIndex, 'audioType', 'user')
       
-      alert('Запись успешно сохранена!')
+      // Показываем сообщение только если сохранение не было автоматическим
+      if (!wasAutoSaving) {
+        alert('Запись успешно сохранена!')
+      }
     } else {
       const errorText = await response.text()
       console.error('❌ Upload failed:', response.status, errorText)
@@ -1282,6 +1333,11 @@ async function saveRecording(blockIndex: number) {
     }
   } catch (error: any) {
     console.error('❌ Error saving recording:', error)
+    
+    // Сохраняем флаг автоматического сохранения перед очисткой
+    const wasAutoSaving = isAutoSaving.value[blockIndex]
+    isAutoSaving.value[blockIndex] = false
+    
     let errorMessage = 'Ошибка при сохранении записи: '
     
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -1292,9 +1348,15 @@ async function saveRecording(blockIndex: number) {
       errorMessage += 'Неизвестная ошибка'
     }
     
-    alert(errorMessage)
+    // Показываем alert только если это не автоматическое сохранение
+    if (!wasAutoSaving) {
+      alert(errorMessage)
+    }
   } finally {
     uploading.value = false
+    if (isAutoSaving.value[blockIndex]) {
+      isAutoSaving.value[blockIndex] = false
+    }
   }
 }
 
@@ -1305,16 +1367,23 @@ function discardRecording(blockIndex: number) {
   }
   
   // Освобождаем ресурсы
-  if (recordedAudio.value[blockIndex]) {
+  if (recordedAudio.value[blockIndex] && recordedAudio.value[blockIndex].startsWith('blob:')) {
     URL.revokeObjectURL(recordedAudio.value[blockIndex])
-    recordedAudio.value[blockIndex] = ''
   }
+  recordedAudio.value[blockIndex] = ''
   
   // Очищаем данные
   recordedAudioBlob.value[blockIndex] = null
   recordingChunks.value[blockIndex] = []
   recordingState.value[blockIndex] = 'idle'
   recordingTime.value[blockIndex] = 0
+  isAutoSaving.value[blockIndex] = false
+  
+  // Сбрасываем сохраненный URL на сервере
+  blocks.value[blockIndex].uploadedAudioUrl = undefined
+  blocks.value[blockIndex].audioType = 'ai'
+  handleBlockChange(blockIndex, 'uploadedAudioUrl', undefined)
+  handleBlockChange(blockIndex, 'audioType', 'ai')
   
   // Очищаем интервал
   if (recordingIntervals.value[blockIndex]) {
