@@ -362,7 +362,15 @@
 
               <div v-if="recordedAudio[index]" class="mt-3">
                 <p class="text-xs text-gray-600 mb-2">Предпросмотр записи:</p>
-                <audio :src="recordedAudio[index]" controls class="w-full h-8"></audio>
+                <audio 
+                  :src="recordedAudio[index]" 
+                  controls 
+                  class="w-full h-8"
+                  @error="(e) => handleAudioPreviewError(e, index)"
+                  @loadedmetadata="() => console.log('✅ Audio metadata loaded for block', index)"
+                  @canplay="() => console.log('✅ Audio can play for block', index)"
+                  preload="metadata"
+                ></audio>
                 <button
                   @click="saveRecording(index)"
                   class="mt-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition"
@@ -966,50 +974,87 @@ async function toggleRecording(blockIndex: number) {
     mediaRecorder.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) {
         console.log(`📦 Audio chunk received: ${e.data.size} bytes, type: ${e.data.type}`)
+        // Убеждаемся, что массив chunks существует
+        if (!recordingChunks.value[blockIndex]) {
+          recordingChunks.value[blockIndex] = []
+        }
         recordingChunks.value[blockIndex].push(e.data)
+      } else {
+        console.warn('⚠️ Empty or invalid chunk received')
       }
     }
 
     mediaRecorder.onstop = () => {
       console.log(`🛑 Recording stopped. Total chunks: ${recordingChunks.value[blockIndex].length}`)
       
-      if (recordingChunks.value[blockIndex].length === 0) {
-        console.error('❌ No audio chunks recorded!')
-        alert('Ошибка: не удалось записать аудио. Попробуйте еще раз.')
+      // Небольшая задержка, чтобы убедиться, что все данные записаны
+      setTimeout(() => {
+        if (recordingChunks.value[blockIndex].length === 0) {
+          console.error('❌ No audio chunks recorded!')
+          alert('Ошибка: не удалось записать аудио. Попробуйте еще раз.')
+          recordingState.value[blockIndex] = 'idle'
+          stream.getTracks().forEach(track => track.stop())
+          return
+        }
+        
+        // Определяем MIME тип из первого chunk или используем дефолтный
+        let detectedMimeType = recordingChunks.value[blockIndex][0]?.type || mimeType || 'audio/webm'
+        
+        // Убеждаемся, что MIME тип валидный
+        if (!detectedMimeType || detectedMimeType === '') {
+          detectedMimeType = 'audio/webm;codecs=opus'
+        }
+        
+        // Если тип содержит только 'webm' без codecs, добавляем codecs
+        if (detectedMimeType === 'audio/webm') {
+          detectedMimeType = 'audio/webm;codecs=opus'
+        }
+        
+        console.log(`📦 Using MIME type: ${detectedMimeType}`)
+        
+        // Создаем blob из всех chunks
+        const blob = new Blob(recordingChunks.value[blockIndex], { type: detectedMimeType })
+        console.log(`📦 Created blob: ${blob.size} bytes, type: ${blob.type}`)
+        
+        if (blob.size === 0) {
+          console.error('❌ Created blob is empty!')
+          alert('Ошибка: записанный файл пуст. Попробуйте еще раз.')
+          recordingState.value[blockIndex] = 'idle'
+          stream.getTracks().forEach(track => track.stop())
+          return
+        }
+        
+        // Сохраняем blob для последующей отправки
+        recordedAudioBlob.value[blockIndex] = blob
+        
+        // Освобождаем старый URL, если есть
+        if (recordedAudio.value[blockIndex]) {
+          URL.revokeObjectURL(recordedAudio.value[blockIndex])
+        }
+        
+        // Создаем новый URL для предпросмотра
+        const url = URL.createObjectURL(blob)
+        recordedAudio.value[blockIndex] = url
+        console.log('✅ Created blob URL for preview:', url)
+        
+        // Проверяем, что audio может быть воспроизведен
+        const testAudio = new Audio(url)
+        testAudio.oncanplay = () => {
+          console.log('✅ Audio can be played, duration:', testAudio.duration)
+        }
+        testAudio.onerror = (e) => {
+          console.error('❌ Audio preview error:', e)
+        }
+        
         recordingState.value[blockIndex] = 'idle'
-        stream.getTracks().forEach(track => track.stop())
-        return
-      }
-      
-      // Определяем MIME тип из первого chunk или используем дефолтный
-      const detectedMimeType = recordingChunks.value[blockIndex][0]?.type || mimeType || 'audio/webm'
-      console.log(`📦 Using MIME type: ${detectedMimeType}`)
-      
-      const blob = new Blob(recordingChunks.value[blockIndex], { type: detectedMimeType })
-      console.log(`📦 Created blob: ${blob.size} bytes, type: ${blob.type}`)
-      
-      if (blob.size === 0) {
-        console.error('❌ Created blob is empty!')
-        alert('Ошибка: записанный файл пуст. Попробуйте еще раз.')
-        recordingState.value[blockIndex] = 'idle'
-        stream.getTracks().forEach(track => track.stop())
-        return
-      }
-      
-      // Сохраняем blob для последующей отправки
-      recordedAudioBlob.value[blockIndex] = blob
-      
-      // Создаем URL для предпросмотра
-      const url = URL.createObjectURL(blob)
-      recordedAudio.value[blockIndex] = url
-      recordingState.value[blockIndex] = 'idle'
-      
-      stream.getTracks().forEach(track => {
-        track.stop()
-        console.log('🔇 Media track stopped')
-      })
-      
-      console.log('✅ Recording completed successfully')
+        
+        stream.getTracks().forEach(track => {
+          track.stop()
+          console.log('🔇 Media track stopped')
+        })
+        
+        console.log('✅ Recording completed successfully')
+      }, 100) // Небольшая задержка для завершения записи
     }
 
     mediaRecorder.onerror = (event: any) => {
@@ -1111,6 +1156,30 @@ function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// Обработка ошибок предпросмотра аудио
+function handleAudioPreviewError(event: Event, blockIndex: number) {
+  const audioElement = event.target as HTMLAudioElement
+  console.error('❌ Audio preview error for block', blockIndex, ':', {
+    error: audioElement.error,
+    code: audioElement.error?.code,
+    message: audioElement.error?.message,
+    src: audioElement.src
+  })
+  
+  // Пытаемся использовать blob напрямую, если URL не работает
+  if (recordedAudioBlob.value[blockIndex]) {
+    console.log('🔄 Trying to recreate blob URL...')
+    if (recordedAudio.value[blockIndex]) {
+      URL.revokeObjectURL(recordedAudio.value[blockIndex])
+    }
+    const newUrl = URL.createObjectURL(recordedAudioBlob.value[blockIndex]!)
+    recordedAudio.value[blockIndex] = newUrl
+    console.log('✅ Recreated blob URL:', newUrl)
+  } else {
+    alert('Не удалось загрузить запись для предпросмотра. Попробуйте сохранить и проверить запись позже.')
+  }
 }
 
 async function saveRecording(blockIndex: number) {
