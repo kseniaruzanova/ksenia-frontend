@@ -192,7 +192,7 @@
               </button>
               <button 
                 type="submit" 
-                :disabled="submitting" 
+                :disabled="submitting"  
                 class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
               >
                 {{ submitting ? 'Сохранение...' : (showEditModal ? 'Обновить' : 'Создать') }}
