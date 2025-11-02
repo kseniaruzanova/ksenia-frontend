@@ -309,13 +309,25 @@
 
             <!-- Запись аудио -->
             <div class="bg-white p-4 rounded-lg border border-gray-200">
+              <!-- Предупреждение о недоступности записи -->
+              <div v-if="!recordingAvailable" class="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p class="text-sm text-yellow-800 font-medium flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                  {{ recordingAvailabilityError }}
+                </p>
+              </div>
+              
               <div class="flex items-center gap-3 mb-3">
                 <button
                   @click="toggleRecording(index)"
-                  :disabled="recordingState[index] === 'recording'"
+                  :disabled="recordingState[index] === 'recording' || !recordingAvailable"
                   :class="[
                     'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition',
-                    recordingState[index] === 'recording'
+                    !recordingAvailable
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : recordingState[index] === 'recording'
                       ? 'bg-red-500 text-white cursor-not-allowed'
                       : recordingState[index] === 'paused'
                       ? 'bg-yellow-500 text-white'
@@ -673,6 +685,62 @@ const canGenerateVideo = computed(() => {
   )
 })
 
+// Функция для проверки доступности записи
+function checkRecordingAvailability(): { available: boolean; error?: string } {
+  // Проверяем доступность API
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return {
+      available: false,
+      error: 'Ваш браузер не поддерживает запись аудио. Пожалуйста, обновите браузер.'
+    }
+  }
+
+  // Проверяем протокол (HTTPS обязателен, кроме localhost)
+  const isSecureContext = window.isSecureContext || 
+    location.protocol === 'https:' || 
+    location.hostname === 'localhost' || 
+    location.hostname === '127.0.0.1'
+
+  if (!isSecureContext) {
+    return {
+      available: false,
+      error: 'Для записи аудио требуется HTTPS подключение. Пожалуйста, используйте HTTPS для доступа к сайту.'
+    }
+  }
+
+  return { available: true }
+}
+
+// Функция для определения поддерживаемого MIME типа
+function getSupportedMimeType(): string | null {
+  const types = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/mp4',
+    'audio/wav'
+  ]
+
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) {
+      console.log(`✅ Supported MIME type: ${type}`)
+      return type
+    }
+  }
+
+  console.warn('⚠️ No supported MIME type found, using default')
+  return null // Браузер выберет подходящий тип
+}
+
+// Проверяем доступность записи при загрузке компонента
+const recordingAvailable = computed(() => {
+  return checkRecordingAvailability().available
+})
+
+const recordingAvailabilityError = computed(() => {
+  return checkRecordingAvailability().error
+})
+
 // Вычисляемое свойство для расчета продолжительности каждой фотографии
 const getImageDuration = (block: VideoBlock) => {
   if (!block.images || block.images.length === 0) return 0
@@ -865,24 +933,61 @@ async function toggleRecording(blockIndex: number) {
     return // Уже записывается
   }
 
+  // Проверяем доступность записи
+  const availability = checkRecordingAvailability()
+  if (!availability.available) {
+    alert(availability.error || 'Запись недоступна')
+    return
+  }
+
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    const mediaRecorder = new MediaRecorder(stream)
+    console.log('🎤 Requesting microphone access...')
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      } 
+    })
+    console.log('✅ Microphone access granted')
+
+    const mimeType = getSupportedMimeType()
+    const options = mimeType ? { mimeType } : undefined
+    
+    console.log(`🎙️ Creating MediaRecorder with options:`, options)
+    const mediaRecorder = new MediaRecorder(stream, options)
     const chunks: Blob[] = []
 
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data)
+      if (e.data.size > 0) {
+        console.log(`📦 Audio chunk received: ${e.data.size} bytes`)
+        chunks.push(e.data)
+      }
     }
 
     mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'audio/webm' })
+      console.log(`🛑 Recording stopped. Total chunks: ${chunks.length}`)
+      const mimeType = chunks[0]?.type || 'audio/webm'
+      const blob = new Blob(chunks, { type: mimeType })
+      console.log(`📦 Created blob: ${blob.size} bytes, type: ${blob.type}`)
       const url = URL.createObjectURL(blob)
       recordedAudio.value[blockIndex] = url
+      recordingState.value[blockIndex] = 'idle'
+      stream.getTracks().forEach(track => {
+        track.stop()
+        console.log('🔇 Media track stopped')
+      })
+    }
+
+    mediaRecorder.onerror = (event: any) => {
+      console.error('❌ MediaRecorder error:', event.error)
+      alert(`Ошибка записи: ${event.error?.message || 'Неизвестная ошибка'}`)
       recordingState.value[blockIndex] = 'idle'
       stream.getTracks().forEach(track => track.stop())
     }
 
-    mediaRecorder.start()
+    console.log('▶️ Starting MediaRecorder...')
+    mediaRecorder.start(1000) // Собираем данные каждую секунду
     mediaRecorders.value[blockIndex] = mediaRecorder
     recordingState.value[blockIndex] = 'recording'
     recordingTime.value[blockIndex] = 0
@@ -891,9 +996,29 @@ async function toggleRecording(blockIndex: number) {
     recordingIntervals.value[blockIndex] = setInterval(() => {
       recordingTime.value[blockIndex] = (recordingTime.value[blockIndex] || 0) + 1
     }, 1000)
-  } catch (error) {
-    console.error('Error starting recording:', error)
-    alert('Не удалось начать запись. Проверьте разрешения микрофона.')
+
+    console.log('✅ Recording started successfully')
+  } catch (error: any) {
+    console.error('❌ Error starting recording:', error)
+    
+    let errorMessage = 'Не удалось начать запись. '
+    
+    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      errorMessage += 'Разрешение на доступ к микрофону было отклонено. Пожалуйста, разрешите доступ к микрофону в настройках браузера.'
+    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+      errorMessage += 'Микрофон не найден. Убедитесь, что микрофон подключен.'
+    } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+      errorMessage += 'Микрофон уже используется другим приложением.'
+    } else if (error.name === 'OverconstrainedError') {
+      errorMessage += 'Микрофон не поддерживает требуемые параметры.'
+    } else if (error.name === 'SecurityError') {
+      errorMessage += 'Для записи аудио требуется HTTPS подключение. Пожалуйста, используйте HTTPS для доступа к сайту.'
+    } else {
+      errorMessage += `Ошибка: ${error.message || 'Неизвестная ошибка'}`
+    }
+    
+    alert(errorMessage)
+    recordingState.value[blockIndex] = 'idle'
   }
 }
 
