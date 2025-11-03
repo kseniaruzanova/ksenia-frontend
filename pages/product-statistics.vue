@@ -150,7 +150,8 @@ const productNames = {
   arcanumRealization: 'Аркан самореализации',
   awakeningCodes: 'Три кода пробуждения',
   matrixLife: 'Матрица Жизни и коды жизни',
-  karmicTail: 'Кармический хвост, предназначение и карма денег'
+  karmicTail: 'Кармический хвост, предназначение и карма денег',
+  archetypeShadow: 'Архетип и тень'
 };
 
 const productIcons = {
@@ -160,7 +161,8 @@ const productIcons = {
   arcanumRealization: '✨',
   awakeningCodes: '✨',
   matrixLife: '🧮',
-  karmicTail: '🔗'
+  karmicTail: '🔗',
+  archetypeShadow: '🌟'
 };
 
 const totalRequests = computed(() => {
