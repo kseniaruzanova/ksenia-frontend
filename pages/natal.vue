@@ -13,7 +13,7 @@
             <form @submit.prevent="fetchChart" class="bg-white p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl shadow-lg w-full space-y-3 sm:space-y-4 border border-gray-100 mb-4 sm:mb-6">
                 <div>
                     <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Дата и время рождения</label>
-                    <input v-model="form.date" type="datetime-local" class="mt-1 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required />
+                    <input v-model="form.date" type="datetime-local" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required />
                 </div>
                 
                 <!-- Поле выбора города -->
