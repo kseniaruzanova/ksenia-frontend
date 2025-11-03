@@ -1,24 +1,24 @@
 <template>
     <Navbar />
-    <div class="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col items-center p-4 md:p-6 transition-all duration-500" :class="{'lg:flex-row lg:items-start lg:justify-center lg:gap-6 lg:px-4': chartData}">
+    <div class="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col items-center p-2 sm:p-4 md:p-6 transition-all duration-500" :class="{'lg:flex-row lg:items-start lg:justify-center lg:gap-6 lg:px-4': chartData}">
 
         <!-- Левая часть - форма -->
         <div class="w-full max-w-md transition-all duration-500" :class="{'lg:max-w-sm lg:sticky lg:top-6': chartData}">
-            <header class="text-center mb-6 lg:mb-8">
-                <h1 class="text-3xl md:text-4xl font-bold text-indigo-700 mb-2">Натальная карта</h1>
-                <p class="text-gray-600 text-sm md:text-base">Рассчитайте вашу персональную астрологическую карту</p>
+            <header class="text-center mb-4 sm:mb-6 lg:mb-8">
+                <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-indigo-700 mb-2">Натальная карта</h1>
+                <p class="text-gray-600 text-xs sm:text-sm md:text-base">Рассчитайте вашу персональную астрологическую карту</p>
             </header>
 
             <!-- Форма -->
-            <form @submit.prevent="fetchChart" class="bg-white p-5 md:p-6 rounded-2xl shadow-lg w-full space-y-4 border border-gray-100 mb-6">
+            <form @submit.prevent="fetchChart" class="bg-white p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl shadow-lg w-full space-y-3 sm:space-y-4 border border-gray-100 mb-4 sm:mb-6">
                 <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">Дата и время рождения</label>
-                    <input v-model="form.date" type="datetime-local" class="mt-1 w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm md:text-base" required />
+                    <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Дата и время рождения</label>
+                    <input v-model="form.date" type="datetime-local" class="mt-1 w-full border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required />
                 </div>
                 
                 <!-- Поле выбора города -->
                 <div class="relative">
-                    <label class="block text-sm font-medium text-gray-600 mb-1">Место рождения</label>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Место рождения</label>
                     <div class="relative">
                         <input 
                             v-model="citySearchQuery" 
@@ -26,7 +26,7 @@
                             @focus="showCitySuggestions = true"
                             @blur="hideCitySuggestions"
                             type="text" 
-                            class="mt-1 w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm md:text-base" 
+                            class="mt-1 w-full border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" 
                             placeholder="Начните вводить название города..."
                             autocomplete="off"
                         />
@@ -71,23 +71,23 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">Широта места рождения</label>
-                    <input v-model.number="form.lat" @input="limitDecimalPlaces($event, 'lat')" type="number" step="0.0001" class="mt-1 w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm md:text-base" required placeholder="55.7558" />
+                    <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Широта места рождения</label>
+                    <input v-model.number="form.lat" @input="limitDecimalPlaces($event, 'lat')" type="number" step="0.0001" class="mt-1 w-full border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="55.7558" />
                     <p class="text-xs text-gray-500 mt-1">Пример: Москва - 55.7558</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">Долгота места рождения</label>
-                    <input v-model.number="form.lon" @input="limitDecimalPlaces($event, 'lon')" type="number" step="0.0001" class="mt-1 w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm md:text-base" required placeholder="37.6173" />
+                    <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Долгота места рождения</label>
+                    <input v-model.number="form.lon" @input="limitDecimalPlaces($event, 'lon')" type="number" step="0.0001" class="mt-1 w-full border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="37.6173" />
                     <p class="text-xs text-gray-500 mt-1">Пример: Москва - 37.6173</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">Часовой пояс</label>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Часовой пояс</label>
                     <div class="flex gap-2">
-                        <input v-model.number="form.timezone" type="number" step="1" min="-12" max="14" class="mt-1 flex-1 border rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm md:text-base" required placeholder="3" />
+                        <input v-model.number="form.timezone" type="number" step="1" min="-12" max="14" class="mt-1 flex-1 border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="3" />
                         <button 
                             @click="updateTimezoneFromCoordinates" 
                             type="button"
-                            class="mt-1 px-3 py-3 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition text-sm font-medium"
+                            class="mt-1 px-3 py-2.5 sm:py-3 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition text-sm font-medium"
                             title="Автоматически определить часовой пояс по координатам"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -97,7 +97,7 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-1">Москва: +3, Нью-Йорк: -5. Нажмите кнопку для автоматического определения</p>
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-xl shadow hover:bg-indigo-700 transition font-medium flex items-center justify-center text-sm md:text-base" :disabled="loading">
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 sm:py-3 rounded-lg sm:rounded-xl shadow hover:bg-indigo-700 transition font-medium flex items-center justify-center text-sm" :disabled="loading">
                     <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -107,48 +107,48 @@
             </form>
 
             <!-- Ошибка -->
-            <div v-if="error" class="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <div v-if="error" class="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl">
                 <div class="flex items-center text-red-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span class="font-medium text-sm">{{ error }}</span>
+                    <span class="font-medium text-xs sm:text-sm">{{ error }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Правая часть - результаты -->
         <transition name="slide-fade">
-            <div v-if="chartData" class="w-full max-w-6xl lg:flex-1 transition-all duration-500">
+            <div v-if="chartData" class="w-full max-w-6xl lg:flex-1 transition-all duration-500 px-2 sm:px-0">
                 <!-- Информация о карте -->
-                <div class="bg-white rounded-2xl shadow p-5 md:p-6 mb-6 border border-gray-100">
-                    <h2 class="text-xl md:text-2xl font-bold text-indigo-700 mb-4 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="bg-white rounded-xl sm:rounded-2xl shadow p-4 sm:p-5 md:p-6 mb-4 sm:mb-6 border border-gray-100">
+                    <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-indigo-700 mb-3 sm:mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                         </svg>
                         Ваша натальная карта
                     </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                        <div class="bg-indigo-50 p-3 rounded-lg">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 text-sm">
+                        <div class="bg-indigo-50 p-2.5 sm:p-3 rounded-lg">
                             <div class="text-xs text-indigo-600 font-semibold">ДАТА И ВРЕМЯ</div>
-                            <div class="text-xs md:text-sm">{{ formatDateTime(chartData.date) }}</div>
+                            <div class="text-xs sm:text-sm">{{ formatDateTime(chartData.date) }}</div>
                         </div>
-                        <div class="bg-indigo-50 p-3 rounded-lg">
+                        <div class="bg-indigo-50 p-2.5 sm:p-3 rounded-lg">
                             <div class="text-xs text-indigo-600 font-semibold">МЕСТО РОЖДЕНИЯ</div>
-                            <div class="text-xs md:text-sm">
+                            <div class="text-xs sm:text-sm">
                                 {{ selectedCity ? selectedCity.display_name : 'Координаты' }}
                             </div>
                             <div class="text-xs text-gray-500">
                                 {{ chartData.location.latitude.toFixed(4) }}°N, {{ chartData.location.longitude.toFixed(4) }}°E
                             </div>
                         </div>
-                        <div class="bg-indigo-50 p-3 rounded-lg">
+                        <div class="bg-indigo-50 p-2.5 sm:p-3 rounded-lg">
                             <div class="text-xs text-indigo-600 font-semibold">ЧАСОВОЙ ПОЯС</div>
-                            <div class="text-xs md:text-sm">UTC{{ chartData.location.timezone >= 0 ? '+' : '' }}{{ chartData.location.timezone }}</div>
+                            <div class="text-xs sm:text-sm">UTC{{ chartData.location.timezone >= 0 ? '+' : '' }}{{ chartData.location.timezone }}</div>
                         </div>
                     </div>
                     <!-- Подпись о системе домов -->
-                    <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-blue-50 rounded-lg border border-blue-200">
                         <p class="text-xs text-blue-700 flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -159,82 +159,82 @@
                 </div>
 
                 <!-- Гороскопы по планетам -->
-                <div class="bg-white rounded-2xl shadow p-5 md:p-6 mb-6 border border-gray-100">
-                    <h3 class="text-lg font-semibold mb-4 text-indigo-700 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3糖果42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                <div class="bg-white rounded-xl sm:rounded-2xl shadow p-4 sm:p-5 md:p-6 mb-4 sm:mb-6 border border-gray-100">
+                    <h3 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-indigo-700 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                         </svg>
                         Персональные гороскопы
                     </h3>
-                    <p class="text-sm text-gray-600 mb-4">Получите подробный гороскоп по каждой из планет в вашем знаке зодиака</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Получите подробный гороскоп по каждой из планет в вашем знаке зодиака</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                         <button
                             v-for="planet in planetsWithHoroscopes"
                             :key="planet.key"
                             @click="downloadHoroscope(planet.key, planet.planet)"
                             :disabled="loadingHoroscope"
-                            class="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 hover:border-indigo-400 hover:shadow-md transition-all group"
+                            class="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg sm:rounded-xl border border-indigo-200 hover:border-indigo-400 hover:shadow-md transition-all group"
                         >
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" :style="{ backgroundColor: getPlanetColor(planet.planet) + '20', color: getPlanetColor(planet.planet) }">
+                            <div class="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-lg sm:text-xl flex-shrink-0" :style="{ backgroundColor: getPlanetColor(planet.planet) + '20', color: getPlanetColor(planet.planet) }">
                                     {{ getPlanetAbbreviation(planet.planet) }}
                                 </div>
-                                <div>
-                                    <div class="font-semibold text-sm text-gray-800">{{ planet.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ planet.description }}</div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-semibold text-xs sm:text-sm text-gray-800 truncate">{{ planet.name }}</div>
+                                    <div class="text-xs text-gray-500 truncate">{{ planet.description }}</div>
                                 </div>
                             </div>
-                            <svg v-if="!loadingHoroscope" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg v-if="!loadingHoroscope" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600 group-hover:translate-x-1 transition-transform flex-shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
-                            <div v-else class="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+                            <div v-else class="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-indigo-600 flex-shrink-0 ml-2"></div>
                         </button>
                     </div>
                 </div>
 
                 <!-- Таблица планета-знак-дом -->
-                <div class="bg-white rounded-2xl shadow p-5 md:p-6 mb-6 border border-gray-100">
-                    <h3 class="text-lg font-semibold mb-4 text-indigo-700 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="bg-white rounded-xl sm:rounded-2xl shadow p-4 sm:p-5 md:p-6 mb-4 sm:mb-6 border border-gray-100">
+                    <h3 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-indigo-700 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                         Планеты в знаках и домах
                     </h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                    <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                        <table class="w-full text-xs sm:text-sm">
                             <thead>
                                 <tr class="bg-indigo-50 text-indigo-700">
-                                    <th class="p-3 text-left">Планета</th>
-                                    <th class="p-3 text-left">Знак</th>
-                                    <th class="p-3 text-left">Дом</th>
+                                    <th class="p-2 sm:p-3 text-left">Планета</th>
+                                    <th class="p-2 sm:p-3 text-left">Знак</th>
+                                    <th class="p-2 sm:p-3 text-left">Дом</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="planet in chartData.planets" :key="planet.name" class="border-b hover:bg-gray-50">
-                                    <td class="p-3 font-medium">{{ getRussianPlanetName(planet.name) }}</td>
-                                    <td class="p-3">
+                                    <td class="p-2 sm:p-3 font-medium">{{ getRussianPlanetName(planet.name) }}</td>
+                                    <td class="p-2 sm:p-3">
                                         <span class="inline-flex items-center">
                                             <span class="mr-1">{{ getRussianSignName(planet.zodiacSign.sign) }}</span>
                                             <span class="text-xs text-gray-500">{{ planet.zodiacSign.emoji }}</span>
                                         </span>
                                     </td>
-                                    <td class="p-3">{{ getHouseForPlanet(planet.name) }}</td>
+                                    <td class="p-2 sm:p-3">{{ getHouseForPlanet(planet.name) }}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="flex flex-col xl:flex-row gap-6">
+                <div class="flex flex-col xl:flex-row gap-4 sm:gap-6">
                     <!-- Круговая диаграмма -->
-                    <div class="bg-white rounded-2xl shadow p-5 md:p-6 flex-1 border border-gray-100">
-                        <h3 class="text-lg font-semibold mb-4 text-indigo-700 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div class="bg-white rounded-xl sm:rounded-2xl shadow p-4 sm:p-5 md:p-6 flex-1 border border-gray-100">
+                        <h3 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-indigo-700 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Круговая карта
                         </h3>
-                        <div class="relative mx-auto w-full max-w-[500px] aspect-square">
+                        <div class="relative mx-auto w-full max-w-[500px] aspect-square touch-none">
                             <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" class="w-full h-full">
                                 <!-- Фоновый круг -->
                                 <circle cx="200" cy="200" r="195" fill="none" stroke="#e5e7eb" stroke-width="2" />
@@ -361,15 +361,15 @@
 
                             <!-- Подсказка -->
                             <transition name="fade">
-                                <div v-if="hoverPlanet" class="absolute bg-white p-3 rounded-xl shadow-xl border border-gray-200 z-20 w-[220px] text-sm animate-fade-in" :style="{
+                                <div v-if="hoverPlanet" class="absolute bg-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-xl border border-gray-200 z-20 w-[180px] sm:w-[220px] text-xs sm:text-sm animate-fade-in pointer-events-none" :style="{
                                     left: `calc(50% + ${150 * Math.cos(toRad(hoverPlanet.longitude - 90))}px)`,
                                     top: `calc(50% + ${150 * Math.sin(toRad(hoverPlanet.longitude - 90))}px)`,
                                     transform: 'translate(-50%, -110%)'
                                 }">
-                                    <div class="font-semibold text-indigo-700">{{ getRussianPlanetName(hoverPlanet.name) }}</div>
-                                    <div>{{ hoverPlanet.formattedPosition }}</div>
-                                    <div>В знаке: {{ getRussianSignName(hoverPlanet.zodiacSign.sign) }}</div>
-                                    <div>В доме: {{ getHouseForPlanet(hoverPlanet.name) }}</div>
+                                    <div class="font-semibold text-indigo-700 truncate">{{ getRussianPlanetName(hoverPlanet.name) }}</div>
+                                    <div class="truncate">{{ hoverPlanet.formattedPosition }}</div>
+                                    <div class="truncate">В знаке: {{ getRussianSignName(hoverPlanet.zodiacSign.sign) }}</div>
+                                    <div class="truncate">В доме: {{ getHouseForPlanet(hoverPlanet.name) }}</div>
                                     <div :class="hoverPlanet.retrograde ? 'text-red-600' : 'text-green-600'">
                                         {{ hoverPlanet.retrograde ? 'Ретроградная' : 'Директная' }}
                                     </div>
@@ -379,9 +379,9 @@
                     </div>
 
                     <!-- Информация о планетах и домах -->
-                    <div class="bg-white rounded-2xl shadow p-5 md:p-6 flex-1 border border-gray-100">
-                        <h3 class="text-lg font-semibold mb-4 text-indigo-700 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div class="bg-white rounded-xl sm:rounded-2xl shadow p-4 sm:p-5 md:p-6 flex-1 border border-gray-100">
+                        <h3 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-indigo-700 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
                             </svg>
@@ -389,13 +389,13 @@
                         </h3>
 
                         <!-- Планеты -->
-                        <div class="mb-6">
-                            <h4 class="font-semibold mb-3 text-gray-700 border-b pb-2">Планеты</h4>
+                        <div class="mb-4 sm:mb-6">
+                            <h4 class="font-semibold mb-2 sm:mb-3 text-gray-700 border-b pb-2 text-sm sm:text-base">Планеты</h4>
                             <div class="space-y-2 max-h-60 overflow-y-auto pr-2">
-                                <div v-for="planet in chartData.planets" :key="planet.name" class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50 rounded-lg transition">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-4 h-4 rounded-full border-2 border-black" :style="{ backgroundColor: getPlanetColor(planet.name) }"></div>
-                                        <span class="font-medium text-sm">{{ getRussianPlanetName(planet.name) }}</span>
+                                <div v-for="planet in chartData.planets" :key="planet.name" class="flex items-center justify-between p-2 sm:p-3 border-b border-gray-100 hover:bg-gray-50 rounded-lg transition">
+                                    <div class="flex items-center space-x-2 sm:space-x-3">
+                                        <div class="w-4 h-4 rounded-full border-2 border-black flex-shrink-0" :style="{ backgroundColor: getPlanetColor(planet.name) }"></div>
+                                        <span class="font-medium text-xs sm:text-sm">{{ getRussianPlanetName(planet.name) }}</span>
                                     </div>
                                     <div class="text-right">
                                         <div class="text-xs font-semibold">{{ planet.formattedPosition }}</div>
@@ -408,15 +408,15 @@
                         </div>
 
                         <!-- Дома -->
-                        <div class="mb-6">
-                            <h4 class="font-semibold mb-3 text-gray-700 border-b pb-2">Дома гороскопа</h4>
+                        <div class="mb-4 sm:mb-6">
+                            <h4 class="font-semibold mb-2 sm:mb-3 text-gray-700 border-b pb-2 text-sm sm:text-base">Дома гороскопа</h4>
                             <div class="space-y-2 max-h-60 overflow-y-auto pr-2">
-                                <div v-for="house in chartData.houses" :key="house.house" class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50 rounded-lg transition">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700">
+                                <div v-for="house in chartData.houses" :key="house.house" class="flex items-center justify-between p-2 sm:p-3 border-b border-gray-100 hover:bg-gray-50 rounded-lg transition">
+                                    <div class="flex items-center space-x-2 sm:space-x-3">
+                                        <div class="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 flex-shrink-0">
                                             {{ house.house }}
                                         </div>
-                                        <span class="font-medium text-sm">{{ getRussianHouseName(house.house) }}</span>
+                                        <span class="font-medium text-xs sm:text-sm">{{ getRussianHouseName(house.house) }}</span>
                                     </div>
                                     <div class="text-right">
                                         <div class="text-xs font-semibold">{{ house.formattedPosition }}</div>
@@ -430,25 +430,25 @@
 
                         <!-- Углы карты -->
                         <div>
-                            <h4 class="font-semibold mb-3 text-gray-700 border-b pb-2">Углы карты</h4>
+                            <h4 class="font-semibold mb-2 sm:mb-3 text-gray-700 border-b pb-2 text-sm sm:text-base">Углы карты</h4>
                             <div class="space-y-2">
-                                <div class="flex justify-between p-3 border-b hover:bg-gray-50 rounded-lg transition">
-                                    <span class="font-medium text-red-600 flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div class="flex justify-between p-2 sm:p-3 border-b hover:bg-gray-50 rounded-lg transition">
+                                    <span class="font-medium text-red-600 flex items-center text-xs sm:text-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                                         </svg>
                                         ASC (Асцендент)
                                     </span>
-                                    <span class="text-sm">{{ chartData.ascendant.formattedPosition }}</span>
+                                    <span class="text-xs sm:text-sm">{{ chartData.ascendant.formattedPosition }}</span>
                                 </div>
-                                <div class="flex justify-between p-3 border-b hover:bg-gray-50 rounded-lg transition">
-                                    <span class="font-medium text-purple-600 flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div class="flex justify-between p-2 sm:p-3 border-b hover:bg-gray-50 rounded-lg transition">
+                                    <span class="font-medium text-purple-600 flex items-center text-xs sm:text-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                                         </svg>
                                         MC (Середина неба)
                                     </span>
-                                    <span class="text-sm">{{ chartData.midheaven.formattedPosition }}</span>
+                                    <span class="text-xs sm:text-sm">{{ chartData.midheaven.formattedPosition }}</span>
                                 </div>
                             </div>
                         </div>
@@ -456,22 +456,22 @@
                 </div>
 
                 <!-- Аспекты -->
-                <div v-if="chartData.aspects.length" class="bg-white rounded-2xl shadow p-5 md:p-6 mt-6 border border-gray-100">
-                    <h3 class="text-lg font-semibold mb-4 text-indigo-700 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div v-if="chartData.aspects.length" class="bg-white rounded-xl sm:rounded-2xl shadow p-4 sm:p-5 md:p-6 mt-4 sm:mt-6 border border-gray-100">
+                    <h3 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-indigo-700 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
                         Аспекты
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div v-for="aspect in chartData.aspects" :key="`${aspect.planet1}-${aspect.planet2}`" class="p-4 rounded-lg border transition transform hover:scale-[1.02]" :class="getAspectColor(aspect.influence)">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="font-semibold text-sm">{{ getRussianPlanetName(aspect.planet1) }} - {{ getRussianPlanetName(aspect.planet2) }}</span>
-                                <span class="text-xs px-2 py-1 rounded-full bg-white bg-opacity-50 font-medium">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div v-for="aspect in chartData.aspects" :key="`${aspect.planet1}-${aspect.planet2}`" class="p-3 sm:p-4 rounded-lg border transition transform hover:scale-[1.02]" :class="getAspectColor(aspect.influence)">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
+                                <span class="font-semibold text-xs sm:text-sm">{{ getRussianPlanetName(aspect.planet1) }} - {{ getRussianPlanetName(aspect.planet2) }}</span>
+                                <span class="text-xs px-2 py-1 rounded-full bg-white bg-opacity-50 font-medium self-start sm:self-auto">
                                     {{ getRussianAspectName(aspect.type) }}
                                 </span>
                             </div>
-                            <div class="text-sm">
+                            <div class="text-xs sm:text-sm">
                                 {{ aspect.angle.toFixed(1) }}° (орбис: {{ aspect.orb.toFixed(1) }}°)
                             </div>
                             <div class="text-xs text-gray-600 mt-1">
@@ -486,8 +486,8 @@
         <!-- Загрузка -->
         <div v-if="loading && !chartData" class="mt-8 p-4 w-full max-w-md">
             <div class="flex flex-col items-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                <p class="mt-4 text-gray-600 text-center">Рассчитываем вашу натальную карту<br>Это может занять несколько секунд</p>
+                <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-indigo-600"></div>
+                <p class="mt-4 text-gray-600 text-center text-sm sm:text-base">Рассчитываем вашу натальную карту<br>Это может занять несколько секунд</p>
             </div>
         </div>
     </div>
@@ -1133,6 +1133,32 @@
         }
     }
 
+    @media (max-width: 640px) {
+        /* Улучшенная адаптация для мобильных устройств */
+        .min-h-screen {
+            min-height: 100vh;
+        }
+        
+        /* Более компактные отступы для мобильных */
+        .space-y-3 > * + * {
+            margin-top: 0.75rem;
+        }
+        
+        .space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+        
+        /* Таблица с горизонтальным скроллом на мобильных */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Круговая диаграмма - более компактная на мобильных */
+        .aspect-square {
+            min-height: 280px;
+        }
+    }
+
     @media (max-width: 480px) {
         .text-3xl {
             font-size: 1.75rem;
@@ -1144,6 +1170,34 @@
 
         .relative[style*="width: 100%; max-width: 400px; height: 400px"] {
             height: 320px;
+        }
+        
+        /* Дополнительные улучшения для очень маленьких экранов */
+        .max-w-md {
+            max-width: 100%;
+        }
+    }
+
+    @media (max-width: 360px) {
+        /* Стили для очень маленьких экранов */
+        .text-2xl {
+            font-size: 1.5rem;
+        }
+        
+        .p-4 {
+            padding: 0.875rem;
+        }
+    }
+    
+    /* Улучшение для touch-устройств */
+    @media (hover: none) and (pointer: coarse) {
+        button, a {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        .cursor-pointer {
+            cursor: default;
         }
     }
 </style>
