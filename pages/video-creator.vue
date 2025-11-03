@@ -3,7 +3,7 @@
     <Navbar />
     
     <!-- Блок ошибок -->
-    <div class="fixed top-20 right-4 z-50 space-y-2 max-w-md">
+    <div class="fixed top-16 sm:top-20 right-2 sm:right-4 z-50 space-y-2 max-w-[calc(100vw-1rem)] sm:max-w-md">
       <TransitionGroup name="error">
         <div
           v-for="error in errors"
@@ -24,31 +24,32 @@
         </div>
       </TransitionGroup>
     </div>
-    <div class="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-4 sm:py-8 lg:py-12 px-3 sm:px-4 lg:px-8">
+    <div class="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-2 sm:py-4 lg:py-8 px-2 sm:px-4 lg:px-8">
       <div class="max-w-7xl mx-auto">
         <!-- Заголовок -->
-        <div class="text-center mb-6 sm:mb-8">
-          <h1 class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <div class="text-center mb-4 sm:mb-6 lg:mb-8">
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent px-2">
             Создание Видео
           </h1>
-          <p class="mt-2 sm:mt-4 text-base sm:text-lg text-gray-600">
+          <p class="mt-1 sm:mt-2 lg:mt-4 text-sm sm:text-base lg:text-lg text-gray-600 px-2">
             Создавайте уникальные рилсы с помощью ИИ
           </p>
         </div>
 
         <!-- Основной контент -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
           <!-- Левая панель - Список созданных рилсов -->
           <div class="lg:col-span-1 order-2 lg:order-1">
-            <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 sticky top-4">
-              <div class="flex items-center justify-between mb-4 sm:mb-6">
-                <h2 class="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
-                  <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 lg:p-6 sticky top-2 sm:top-4 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+              <div class="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6 flex-shrink-0">
+                <h2 class="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 flex items-center">
+                  <svg class="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 mr-1 sm:mr-2 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                   </svg>
-                  Мои рилсы
+                  <span class="hidden sm:inline">Мои рилсы</span>
+                  <span class="sm:hidden">Рилсы</span>
                 </h2>
-                <span class="bg-purple-100 text-purple-700 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full">
+                <span class="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0">
                   {{ reels.length }}
                 </span>
               </div>
@@ -67,41 +68,41 @@
                 <p class="text-gray-400 text-xs mt-1">Создайте свой первый рилс</p>
               </div>
 
-              <div v-else class="space-y-2 sm:space-y-3 max-h-[400px] sm:max-h-[600px] overflow-y-auto custom-scrollbar">
+              <div v-else class="space-y-2 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                 <div 
                   v-for="reel in reels" 
                   :key="reel.id"
                   @click="selectReel(reel)"
                   :class="[
-                    'group cursor-pointer p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md',
+                    'group cursor-pointer p-2.5 sm:p-3 lg:p-4 rounded-lg sm:rounded-xl border-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]',
                     selectedReel?.id === reel.id 
                       ? 'border-purple-500 bg-purple-50 shadow-md' 
                       : 'border-gray-200 hover:border-purple-300 bg-gray-50'
                   ]"
                 >
-                  <div class="flex items-start justify-between">
+                  <div class="flex items-start justify-between gap-2">
                     <div class="flex-1 min-w-0">
-                      <h3 class="font-semibold text-sm sm:text-base text-gray-800 truncate mb-1">
+                      <h3 class="font-semibold text-xs sm:text-sm lg:text-base text-gray-800 truncate mb-1">
                         {{ reel.title }}
                       </h3>
-                      <p class="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-2">
+                      <p class="text-xs text-gray-600 line-clamp-2 mb-2">
                         {{ reel.prompt }}
                       </p>
-                      <div class="flex items-center gap-2">
-                        <span :class="getStatusClass(reel.status)" class="text-xs px-2 py-0.5 rounded-full font-medium">
+                      <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <span :class="getStatusClass(reel.status)" class="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium">
                           {{ getStatusText(reel.status) }}
                         </span>
-                        <span class="text-xs text-gray-400">
+                        <span class="text-[10px] sm:text-xs text-gray-400">
                           {{ formatDate(reel.createdAt) }}
                         </span>
                       </div>
                     </div>
                     <button 
                       @click.stop="deleteReel(reel.id)"
-                      class="ml-2 text-gray-400 hover:text-red-500 transition touch-manipulation"
+                      class="text-gray-400 hover:text-red-500 active:text-red-600 transition touch-manipulation flex-shrink-0 p-1"
                       title="Удалить"
                     >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                       </svg>
                     </button>
@@ -114,7 +115,7 @@
           <!-- Правая панель - Ввод и действия -->
           <div class="lg:col-span-2 order-1 lg:order-2">
             <!-- Блок анимации генерации блоков -->
-            <div v-if="generatingBlocks" class="bg-white rounded-2xl shadow-lg p-8 sm:p-12">
+            <div v-if="generatingBlocks" class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8 xl:p-12">
               <div class="text-center">
                 <div class="mb-8">
                   <div class="relative inline-block">
@@ -212,35 +213,35 @@
             </div>
 
             <!-- Блок просмотра выбранного рилса -->
-            <div v-else-if="selectedReel" class="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-              <div class="mb-6">
+            <div v-else-if="selectedReel" class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 lg:p-6 xl:p-8">
+                  <div class="mb-4 sm:mb-6">
                 <button 
                   @click="backToCreationForm"
-                  class="flex items-center text-purple-600 hover:text-purple-700 transition mb-4"
+                  class="flex items-center text-purple-600 hover:text-purple-700 active:text-purple-800 transition mb-3 sm:mb-4 touch-manipulation text-sm sm:text-base"
                 >
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                   </svg>
-                  Вернуться к созданию
+                  <span class="truncate">Вернуться к созданию</span>
                 </button>
                 
-                  <div class="flex items-start justify-between mb-4">
-                  <div class="flex-1">
-                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                  <div class="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+                  <div class="flex-1 min-w-0">
+                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 break-words">
                       {{ selectedReel.title }}
                     </h2>
-                    <div class="flex items-center gap-3 mb-3">
-                      <span :class="getStatusClass(selectedReel.status)" class="text-xs px-3 py-1 rounded-full font-medium">
+                    <div class="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 flex-wrap">
+                      <span :class="getStatusClass(selectedReel.status)" class="text-xs px-2 sm:px-3 py-1 rounded-full font-medium flex-shrink-0">
                         {{ getStatusText(selectedReel.status) }}
                       </span>
-                      <span class="text-sm text-gray-500">
+                      <span class="text-xs sm:text-sm text-gray-500 flex-shrink-0">
                         {{ formatDate(selectedReel.createdAt) }}
                       </span>
                       <!-- Кнопка редактирования, если есть блоки -->
                       <button
                         v-if="selectedReel.blocks && selectedReel.blocks.length > 0"
                         @click="editSelectedReel"
-                        class="ml-auto px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition text-sm"
+                        class="ml-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white rounded-lg font-medium transition text-xs sm:text-sm touch-manipulation"
                       >
                         ✏️ Редактировать блоки
                       </button>
@@ -249,10 +250,10 @@
                   </div>
                   <button 
                     @click.stop="deleteReel(selectedReel.id)"
-                    class="ml-4 text-gray-400 hover:text-red-500 transition p-2"
+                    class="text-gray-400 hover:text-red-500 active:text-red-600 transition p-1.5 sm:p-2 flex-shrink-0 touch-manipulation"
                     title="Удалить"
                   >
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
                   </button>
@@ -365,39 +366,42 @@
                     </p>
                   </div>
                   <div class="p-6 bg-white">
-                    <video 
-                      v-if="selectedReel.videoUrl"
-                      :src="getVideoUrl(selectedReel.videoUrl)" 
-                      controls 
-                      class="w-full rounded-lg shadow-lg mb-4"
-                      style="max-height: 600px;"
-                    >
-                      Ваш браузер не поддерживает видео.
-                    </video>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="mb-3 sm:mb-4 relative w-full" style="max-height: 60vh;">
+                      <video 
+                        v-if="selectedReel.videoUrl"
+                        :src="getVideoUrl(selectedReel.videoUrl)" 
+                        controls 
+                        class="w-full h-auto rounded-lg shadow-lg"
+                        style="max-height: 60vh; object-fit: contain;"
+                        playsinline
+                      >
+                        Ваш браузер не поддерживает видео.
+                      </video>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       <a 
                         :href="getVideoUrl(selectedReel.videoUrl)" 
                         download
-                        class="text-center px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition"
+                        class="text-center px-3 sm:px-4 py-2.5 sm:py-3 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white rounded-lg font-semibold transition text-sm sm:text-base touch-manipulation"
                       >
                         📥 Скачать видео
                       </a>
                       <a 
                         :href="getVideoUrl(selectedReel.videoUrl)" 
                         target="_blank"
-                        class="text-center px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition"
+                        class="text-center px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-lg font-semibold transition text-sm sm:text-base touch-manipulation"
                       >
                         🔗 Открыть в новой вкладке
                       </a>
                       <button
                         @click="regenerateVideo(false)"
-                        class="text-center px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold transition"
+                        class="text-center px-3 sm:px-4 py-2.5 sm:py-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-lg font-semibold transition text-sm sm:text-base touch-manipulation"
                       >
                         ♻️ Перегенерировать
                       </button>
                       <button
                         @click="regenerateVideo(true)"
-                        class="text-center px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition"
+                        class="text-center px-3 sm:px-4 py-2.5 sm:py-3 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white rounded-lg font-semibold transition text-sm sm:text-base touch-manipulation"
                       >
                         🎙️ Перегенерировать (с озвучкой)
                       </button>
@@ -546,7 +550,7 @@
             </div>
 
             <!-- Форма создания -->
-            <div v-else-if="showCreationForm" class="bg-white rounded-2xl shadow-lg p-4 sm:p-8">
+            <div v-else-if="showCreationForm" class="bg-white rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 lg:p-6 xl:p-8">
               <!-- Форма ввода -->
               <div class="mb-6 sm:mb-8">
                 <label class="block text-sm sm:text-base font-semibold text-gray-700 mb-2 sm:mb-3">
@@ -584,20 +588,20 @@
               </div>
 
               <!-- Кнопки действий -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
                 <!-- Кнопка генерации сценария -->
                 <button 
                   @click="generateScenario"
                   :disabled="!canSubmit || processing"
-                  class="group relative overflow-hidden px-6 py-4 sm:py-5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none touch-manipulation"
+                  class="group relative overflow-hidden px-4 sm:px-6 py-3 sm:py-4 lg:py-5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none touch-manipulation"
                 >
                   <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                   <div class="relative flex items-center justify-center">
-                    <svg v-if="!processing" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="!processing" class="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <div v-else class="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin mr-2"></div>
-                    {{ processing ? 'ИИ создает сценарий...' : 'Сгенерировать сценарий' }}
+                    <div v-else class="w-4 h-4 sm:w-5 sm:h-5 border-t-2 border-white border-solid rounded-full animate-spin mr-2 flex-shrink-0"></div>
+                    <span class="truncate">{{ processing ? 'ИИ создает сценарий...' : 'Сгенерировать сценарий' }}</span>
                   </div>
                 </button>
 
@@ -605,16 +609,16 @@
                 <button 
                   @click="createVideo"
                   :disabled="!canSubmit || processing"
-                  class="group relative overflow-hidden px-6 py-4 sm:py-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none touch-manipulation"
+                  class="group relative overflow-hidden px-4 sm:px-6 py-3 sm:py-4 lg:py-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none touch-manipulation"
                 >
                   <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                   <div class="relative flex items-center justify-center">
-                    <svg v-if="!processing" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="!processing" class="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <div v-else class="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin mr-2"></div>
-                    {{ processing ? 'Создание...' : 'Создать видео' }}
+                    <div v-else class="w-4 h-4 sm:w-5 sm:h-5 border-t-2 border-white border-solid rounded-full animate-spin mr-2 flex-shrink-0"></div>
+                    <span class="truncate">{{ processing ? 'Создание...' : 'Создать видео' }}</span>
                   </div>
                 </button>
               </div>
@@ -648,7 +652,7 @@
         <div v-if="modal.show" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModal">
           <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
           
-          <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 transform transition-all">
+          <div class="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-[calc(100vw-2rem)] sm:max-w-md w-full p-4 sm:p-6 lg:p-8 transform transition-all mx-4 sm:mx-0">
             <!-- Иконка в зависимости от типа -->
             <div class="flex items-center justify-center mb-4">
               <!-- Success -->
@@ -681,26 +685,26 @@
             </div>
 
             <!-- Заголовок -->
-            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-3">
-              {{ modal.title }}
-            </h3>
+              <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 text-center mb-3 px-2">
+                {{ modal.title }}
+              </h3>
 
-            <!-- Сообщение -->
-            <p class="text-gray-600 text-center mb-6 whitespace-pre-line">
-              {{ modal.message }}
-            </p>
+              <!-- Сообщение -->
+              <p class="text-sm sm:text-base text-gray-600 text-center mb-4 sm:mb-6 whitespace-pre-line px-2">
+                {{ modal.message }}
+              </p>
 
             <!-- Кнопки -->
-            <div v-if="modal.type === 'confirm'" class="flex gap-3">
+            <div v-if="modal.type === 'confirm'" class="flex gap-2 sm:gap-3">
               <button 
                 @click="closeModal"
-                class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-semibold transition"
+                class="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-lg sm:rounded-xl font-semibold transition text-sm sm:text-base touch-manipulation"
               >
                 Отмена
               </button>
               <button 
                 @click="confirmModal"
-                class="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition"
+                class="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-lg sm:rounded-xl font-semibold transition text-sm sm:text-base touch-manipulation"
               >
                 Удалить
               </button>
@@ -709,11 +713,11 @@
               <button 
                 @click="closeModal"
                 :class="[
-                  'w-full px-4 py-3 rounded-xl font-semibold transition',
-                  modal.type === 'success' ? 'bg-green-500 hover:bg-green-600 text-white' :
-                  modal.type === 'error' ? 'bg-red-500 hover:bg-red-600 text-white' :
-                  modal.type === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600 text-white' :
-                  'bg-blue-500 hover:bg-blue-600 text-white'
+                  'w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition text-sm sm:text-base touch-manipulation active:scale-[0.98]',
+                  modal.type === 'success' ? 'bg-green-500 hover:bg-green-600 active:bg-green-700 text-white' :
+                  modal.type === 'error' ? 'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white' :
+                  modal.type === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-white' :
+                  'bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white'
                 ]"
               >
                 Понятно
@@ -793,6 +797,9 @@ const videoGenerationProgress = ref<{
   logs: string[]
   error?: string
 } | null>(null)
+
+// Флаг для отслеживания показа модального окна успеха
+const successModalShown = ref<Set<string | number>>(new Set())
 
 // Массив ошибок для отображения
 const errors = ref<Array<{id: string, message: string, timestamp: number}>>([])
@@ -1591,6 +1598,9 @@ async function startProgressPolling(reelId: string) {
     clearInterval(progressPollingInterval.value)
   }
   
+  // Сбрасываем флаг показа модального окна для нового рилса
+  successModalShown.value.delete(reelId)
+  
   const poll = async () => {
     try {
       const response = await fetch(`${config.public.apiBase}/api/reels/${reelId}/generation-progress`, {
@@ -1621,7 +1631,11 @@ async function startProgressPolling(reelId: string) {
             // Очищаем прогресс после завершения
             videoGenerationProgress.value = null
           }
-          showModal('success', 'Готово!', 'Видео успешно создано!')
+          // Показываем модальное окно только один раз для этого рилса
+          if (!successModalShown.value.has(reelId)) {
+            successModalShown.value.add(reelId)
+            showModal('success', 'Готово!', 'Видео успешно создано!')
+          }
         } else if (data.status === 'blocks_created' && data.progress?.error) {
           stopProgressPolling()
           addError(data.progress.error)
