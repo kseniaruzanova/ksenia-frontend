@@ -13,7 +13,7 @@
             <form @submit.prevent="fetchChart" class="bg-white p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl shadow-lg w-full space-y-3 sm:space-y-4 border border-gray-100 mb-4 sm:mb-6">
                 <div>
                     <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Дата и время рождения</label>
-                    <input v-model="form.date" type="datetime-local" class="mt-1 w-full border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required />
+                    <input v-model="form.date" type="datetime-local" class="mt-1 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required />
                 </div>
                 
                 <!-- Поле выбора города -->
@@ -26,7 +26,7 @@
                             @focus="showCitySuggestions = true"
                             @blur="hideCitySuggestions"
                             type="text" 
-                            class="mt-1 w-full border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" 
+                            class="mt-1 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" 
                             placeholder="Начните вводить название города..."
                             autocomplete="off"
                         />
@@ -72,22 +72,22 @@
 
                 <div>
                     <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Широта места рождения</label>
-                    <input v-model.number="form.lat" @input="limitDecimalPlaces($event, 'lat')" type="number" step="0.0001" class="mt-1 w-full border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="55.7558" />
+                    <input v-model.number="form.lat" @input="limitDecimalPlaces($event, 'lat')" type="number" step="0.0001" class="mt-1 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="55.7558" />
                     <p class="text-xs text-gray-500 mt-1">Пример: Москва - 55.7558</p>
                 </div>
                 <div>
                     <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Долгота места рождения</label>
-                    <input v-model.number="form.lon" @input="limitDecimalPlaces($event, 'lon')" type="number" step="0.0001" class="mt-1 w-full border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="37.6173" />
+                    <input v-model.number="form.lon" @input="limitDecimalPlaces($event, 'lon')" type="number" step="0.0001" class="mt-1 w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="37.6173" />
                     <p class="text-xs text-gray-500 mt-1">Пример: Москва - 37.6173</p>
                 </div>
                 <div>
                     <label class="block text-xs sm:text-sm font-medium text-gray-600 mb-1">Часовой пояс</label>
                     <div class="flex gap-2">
-                        <input v-model.number="form.timezone" type="number" step="1" min="-12" max="14" class="mt-1 flex-1 border rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="3" />
+                        <input v-model.number="form.timezone" type="number" step="1" min="-12" max="14" class="mt-1 flex-1 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition text-sm" required placeholder="3" />
                         <button 
                             @click="updateTimezoneFromCoordinates" 
                             type="button"
-                            class="mt-1 px-3 py-2.5 sm:py-3 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition text-sm font-medium"
+                            class="mt-1 px-3 py-3 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition text-sm font-medium"
                             title="Автоматически определить часовой пояс по координатам"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -97,7 +97,7 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-1">Москва: +3, Нью-Йорк: -5. Нажмите кнопку для автоматического определения</p>
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 sm:py-3 rounded-lg sm:rounded-xl shadow hover:bg-indigo-700 transition font-medium flex items-center justify-center text-sm" :disabled="loading">
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-xl shadow hover:bg-indigo-700 transition font-medium flex items-center justify-center text-sm md:text-base" :disabled="loading">
                     <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
