@@ -200,7 +200,7 @@
                         </svg>
                         Планеты в знаках и домах
                     </h3>
-                    <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                    <div class="overflow-x-auto">
                         <table class="w-full text-xs sm:text-sm">
                             <thead>
                                 <tr class="bg-indigo-50 text-indigo-700">
