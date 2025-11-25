@@ -99,6 +99,43 @@
               </div>
             </div>
 
+            <!-- Матрица жизни -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div class="p-6">
+                <div class="flex items-center mb-4">
+                  <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                    <span class="text-2xl">🔮</span>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Матрица жизни</h3>
+                    <p class="text-sm text-gray-500">Полный расчет с периодами</p>
+                  </div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">
+                  Получите полный расчет матрицы жизни с арканами, периодами жизни и кармическими уроками.
+                </p>
+                <template v-if="isProductAvailable('lifeMatrix')">
+                  <NuxtLink 
+                    to="/magic/lifeMatrix" 
+                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  >
+                    Рассчитать
+                    <svg class="ml-2 -mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </NuxtLink>
+                </template>
+                <template v-else>
+                  <div class="flex items-center text-gray-500 cursor-not-allowed">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Недоступно</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+
             <!-- Расчет 4 кода денег -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
               <div class="p-6">
@@ -320,6 +357,80 @@
                 </template>
               </div>
             </div>
+
+            <!-- Архетип месяца -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div class="p-6">
+                <div class="flex items-center mb-4">
+                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                    <span class="text-2xl">🌙</span>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Архетип месяца</h3>
+                    <p class="text-sm text-gray-500">Узнай свои коды архетип месяца</p>
+                  </div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">
+                  Исследуйте свой архетип месяца для глубокого понимания личности и потенциала.
+                </p>
+                <template v-if="isProductAvailable('archetypeMonth')">
+                  <NuxtLink 
+                    to="/magic/archetypeMonth" 
+                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  >
+                    Рассчитать
+                    <svg class="ml-2 -mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </NuxtLink>
+                </template>
+                <template v-else>
+                  <div class="flex items-center text-gray-500 cursor-not-allowed">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Недоступно</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Удар, цикл, застой, выход -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div class="p-6">
+                <div class="flex items-center mb-4">
+                  <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
+                    <span class="text-2xl">⚡</span>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Удар, цикл, застой, выход</h3>
+                    <p class="text-sm text-gray-500">Жизненный цикл и пути выхода</p>
+                  </div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">
+                  Узнайте свой цикл жизни: застой, удар и три пути выхода по дате рождения.
+                </p>
+                <template v-if="isProductAvailable('stagnationCycle')">
+                  <NuxtLink 
+                    to="/magic/stagnationCycle" 
+                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  >
+                    Рассчитать
+                    <svg class="ml-2 -mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </NuxtLink>
+                </template>
+                <template v-else>
+                  <div class="flex items-center text-gray-500 cursor-not-allowed">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Недоступно</span>
+                  </div>
+                </template>
+              </div>
+            </div>
           </div>
 
           <!-- Контент продукта -->
@@ -355,9 +466,12 @@ const productAvailability = {
   future: ['pro'],
   archetype: ['pro'],
   archetypeShadow: ['pro'],
+  archetypeMonth: ['pro'],
   arcanumRealization: ['pro'],
   awakeningCodes: ['pro'],
   karmicTail: ['pro'],
+  lifeMatrix: ['pro'],
+  stagnationCycle: ['pro'],
 };
 
 // Функция проверки доступности продукта
