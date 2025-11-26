@@ -37,6 +37,35 @@
                 </p>
               </div>
 
+              <!-- Выбор доп месяца -->
+              <div>
+                <label for="chooseMonth" class="block text-sm font-medium text-gray-700 mb-2">
+                  Выберите нужный месяц
+                </label>
+                <select
+                  id="chooseMonth"
+                  v-model="formData.chooseMonth"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                >
+                  <option value="">-- Выберите месяц --</option>
+                  <option value="1">Январь</option>
+                  <option value="2">Февраль</option>
+                  <option value="3">Март</option>
+                  <option value="4">Апрель</option>
+                  <option value="5">Май</option>
+                  <option value="6">Июнь</option>
+                  <option value="7">Июль</option>
+                  <option value="8">Август</option>
+                  <option value="9">Сентябрь</option>
+                  <option value="10">Октябрь</option>
+                  <option value="11">Ноябрь</option>
+                  <option value="12">Декабрь</option>
+                </select>
+                <p class="mt-1 text-sm text-gray-500">
+                  Выберите месяц для расчета аркана
+                </p>
+              </div>
+
               <div class="flex items-center justify-center">
                 <button
                   type="submit"
@@ -214,7 +243,8 @@ const config = useRuntimeConfig();
 const token = useCookie('bearer-token');
 
 const formData = ref({
-  birthDate: ''
+  birthDate: '',
+  chooseMonth: ''
 });
 
 const loading = ref(false);
@@ -245,7 +275,8 @@ async function generateForecast() {
         'Authorization': `Bearer ${token.value}`
       },
       body: JSON.stringify({
-        birthDate: formData.value.birthDate
+        birthDate: formData.value.birthDate,
+        chooseMonth: formData.value.chooseMonth
       })
     });
 
