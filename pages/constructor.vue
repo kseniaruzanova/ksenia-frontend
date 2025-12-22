@@ -431,6 +431,43 @@
                 </template>
               </div>
             </div>
+
+            <!-- Денежная Мандала -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div class="p-6">
+                <div class="flex items-center mb-4">
+                  <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
+                    <span class="text-2xl">💰</span>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Денежная Мандала</h3>
+                    <p class="text-sm text-gray-500">18 аркан изобилия</p>
+                  </div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">
+                  Получите персональную денежную мандалу с информацией, раскрывающей ваши отношения с деньгами и изобилием.
+                </p>
+                <template v-if="isProductAvailable('moneyMandala')">
+                  <NuxtLink 
+                    to="/magic/moneyMandala" 
+                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  >
+                    Рассчитать
+                    <svg class="ml-2 -mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </NuxtLink>
+                </template>
+                <template v-else>
+                  <div class="flex items-center text-gray-500 cursor-not-allowed">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Недоступно</span>
+                  </div>
+                </template>
+              </div>
+            </div>
           </div>
 
           <!-- Контент продукта -->
@@ -472,6 +509,7 @@ const productAvailability = {
   karmicTail: ['pro'],
   lifeMatrix: ['pro'],
   stagnationCycle: ['pro'],
+  moneyMandala: ['pro'],
 };
 
 // Функция проверки доступности продукта
