@@ -520,6 +520,6 @@ function isProductAvailable(productKey) {
   
   // Проверяем доступность для текущего тарифа
   const availableForTariffs = productAvailability[productKey];
-  return availableForTariffs && availableForTariffs.includes(tariff);
+  return availableForTariffs && availableForTariffs.includes(tariff.value);
 }
 </script>

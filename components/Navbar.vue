@@ -502,13 +502,13 @@ const isMobileMenuOpen = ref(false)
 
 // Конфигурация доступности пунктов меню
 const menuItemsAvailability = {
-  subscription: ['none', 'basic', 'pro'],
-  messenger: ['basic', 'pro'],
-  constructor: ['basic', 'pro'],
-  users: ['basic', 'pro'],
-  messages: ['pro'],
-  settings: ['pro'],
-  payments: ['pro']
+  subscription: ['none', 'basic', 'pro', 'tg_max'],
+  messenger: ['basic', 'pro', 'tg_max'],
+  constructor: ['basic', 'pro', 'tg_max'],
+  users: ['basic', 'pro', 'tg_max'],
+  messages: ['pro', 'tg_max'],
+  settings: ['pro', 'tg_max'],
+  payments: ['pro', 'tg_max']
 }
 
 // Функция проверки доступности пункта меню
@@ -518,7 +518,7 @@ function isMenuItemLocked(menuItem) {
   
   // Проверяем доступность для текущего тарифа
   const availableForTariffs = menuItemsAvailability[menuItem]
-  return availableForTariffs && availableForTariffs.includes(tariff)
+  return availableForTariffs && availableForTariffs.includes(tariff.value)
 }
 
 function closeMenu() {

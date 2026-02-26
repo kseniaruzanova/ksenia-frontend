@@ -12,6 +12,24 @@
           </p>
         </div>
 
+        <!-- Одноразовая ссылка для тарифа «Доступ к ТГ и макс каналу» -->
+        <div v-if="isCustomer && tariff === 'tg_max'" class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <h3 class="text-lg font-semibold text-amber-900 mb-2">📢 Ссылка для входа в Telegram-канал</h3>
+          <p class="text-sm text-amber-800 mb-3">При каждом обновлении страницы создаётся новая одноразовая ссылка. Передайте её пользователю для входа в канал.</p>
+          <div v-if="tgInviteLinkLoading" class="text-amber-700">Генерация ссылки...</div>
+          <div v-else-if="tgInviteLinkError" class="text-red-600 text-sm">{{ tgInviteLinkError }}</div>
+          <div v-else-if="tgInviteLink" class="flex flex-wrap items-center gap-2">
+            <a :href="tgInviteLink" target="_blank" rel="noopener noreferrer" class="text-amber-700 underline font-medium break-all">{{ tgInviteLink }}</a>
+            <button
+              type="button"
+              @click="copyTgInviteLink"
+              class="ml-2 px-3 py-1 text-sm bg-amber-200 text-amber-900 rounded hover:bg-amber-300"
+            >
+              Копировать
+            </button>
+          </div>
+        </div>
+
         <template v-if="isCustomer">
           <!-- Информация о текущей подписке -->
           <div class="mb-6"> 
@@ -20,7 +38,8 @@
               :class="{
                 'bg-gradient-to-r from-gray-400 to-gray-500': tariff === 'none',
                 'bg-gradient-to-r from-blue-500 to-blue-600': tariff === 'basic',
-                'bg-gradient-to-r from-green-500 to-green-600': tariff === 'pro'
+                'bg-gradient-to-r from-green-500 to-green-600': tariff === 'pro',
+                'bg-gradient-to-r from-amber-500 to-amber-600': tariff === 'tg_max'
               }"
             >
               <div
@@ -28,13 +47,15 @@
                 :class="{
                   'bg-gray-300': tariff === 'none',
                   'bg-blue-400': tariff === 'basic',
-                  'bg-green-400': tariff === 'pro'
+                  'bg-green-400': tariff === 'pro',
+                  'bg-amber-400': tariff === 'tg_max'
                 }"
               >
                 <span class="text-xl">
                   <span v-if="tariff === 'none'">🚫</span>
                   <span v-else-if="tariff === 'basic'">⭐</span>
                   <span v-else-if="tariff === 'pro'">🌱</span>
+                  <span v-else-if="tariff === 'tg_max'">📢</span>
                 </span>
               </div>
 
@@ -279,13 +300,15 @@
 
 const { tariff, isCustomer } = useAuth();
 const tariffText = computed(() => {
-  switch (tariff) {
+  switch (tariff.value) {
     case 'none':
       return 'Нет подписки'
     case 'basic':
       return 'БАЗОВЫЙ ДОСТУП'
     case 'pro':
       return 'РОСТ'
+    case 'tg_max':
+      return 'Доступ к ТГ и макс каналу'
     default:
       return 'Не указан'
   }
@@ -295,6 +318,42 @@ const config = useRuntimeConfig()
 const token = useCookie('bearer-token')
 const loading = ref(true)
 const stats = ref(null)
+
+const tgInviteLink = ref('')
+const tgInviteLinkLoading = ref(false)
+const tgInviteLinkError = ref('')
+
+async function fetchTgInviteLink() {
+  if (tariff.value !== 'tg_max' || !token.value) return
+  tgInviteLinkLoading.value = true
+  tgInviteLinkError.value = ''
+  tgInviteLink.value = ''
+  try {
+    const res = await fetch(`${config.public.apiBase}/api/customers/tg-channel-invite-link`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token.value}`, 'Content-Type': 'application/json' }
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      tgInviteLinkError.value = data.message || 'Не удалось получить ссылку'
+      return
+    }
+    tgInviteLink.value = data.link || ''
+  } catch (e) {
+    tgInviteLinkError.value = 'Ошибка сети'
+  } finally {
+    tgInviteLinkLoading.value = false
+  }
+}
+
+function copyTgInviteLink() {
+  if (!tgInviteLink.value) return
+  navigator.clipboard.writeText(tgInviteLink.value).then(() => {
+    alert('Ссылка скопирована')
+  }).catch(() => {
+    alert('Не удалось скопировать')
+  })
+}
 
 refreshToken()
 
@@ -410,8 +469,11 @@ async function refreshToken() {
 }
 
 
-// Загружаем статистику при монтировании компонента
+// Загружаем статистику и одноразовую ссылку (для тарифа tg_max) при монтировании
 onMounted(() => {
   fetchUserStats()
+  if (tariff.value === 'tg_max') {
+    fetchTgInviteLink()
+  }
 })
 </script> 

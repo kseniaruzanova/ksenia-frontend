@@ -37,8 +37,8 @@ export const useAuth = () => {
   
   const isAdmin = computed(() => user.value?.role === 'admin');
   const isCustomer = computed(() => user.value?.role === 'customer');
-  const tariff = user.value?.tariff;
-  const username = user.value?.username;
+  const tariff = computed(() => user.value?.tariff ?? 'none');
+  const username = computed(() => user.value?.username ?? '');
 
   return { user, isAdmin, isCustomer, tariff, username };
 }; 

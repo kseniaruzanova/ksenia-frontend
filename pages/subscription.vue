@@ -10,7 +10,8 @@
           :class="{
             'bg-gradient-to-r from-gray-400 to-gray-500': tariff === 'none',
             'bg-gradient-to-r from-blue-500 to-blue-600': tariff === 'basic',
-            'bg-gradient-to-r from-green-500 to-green-600': tariff === 'pro'
+            'bg-gradient-to-r from-green-500 to-green-600': tariff === 'pro',
+            'bg-gradient-to-r from-amber-500 to-amber-600': tariff === 'tg_max'
           }"
         >
           <div class="flex items-center gap-4">
@@ -19,13 +20,15 @@
               :class="{
                 'bg-gray-300': tariff === 'none',
                 'bg-blue-400': tariff === 'basic',
-                'bg-green-400': tariff === 'pro'
+                'bg-green-400': tariff === 'pro',
+                'bg-amber-400': tariff === 'tg_max'
               }"
             >
               <span class="text-2xl">
                 <span v-if="tariff === 'none'">🚫</span>
                 <span v-else-if="tariff === 'basic'">⭐</span>
                 <span v-else-if="tariff === 'pro'">🌱</span>
+                <span v-else-if="tariff === 'tg_max'">📢</span>
               </span>
             </div>
             <div>
@@ -59,7 +62,7 @@
             <button
               @click="startPayment('basic')"
               class="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium transition shadow"
-              :disabled="loading || tariff === 'pro'"
+              :disabled="loading || tariff === 'pro' || tariff === 'tg_max'"
             >
               {{ tariff === 'basic' ? 'Продлить' : 'Купить' }} «БАЗОВЫЙ»
             </button>
@@ -113,16 +116,18 @@ const loading = ref(false)
 const token = useCookie('bearer-token')
 
 const tariffText = computed(() => {
-  switch (tariff) {
+  switch (tariff.value) {
     case 'none': return 'Нет подписки'
     case 'basic': return 'БАЗОВЫЙ ДОСТУП'
     case 'pro': return 'РОСТ'
+    case 'tg_max': return 'Доступ к ТГ и макс каналу'
+    default: return 'Не указан'
   }
 })
 
 const ctaProLabel = computed(() => {
-  if (tariff === 'pro') return 'Продлить «РОСТ»'
-  if (tariff === 'basic') return 'Улучшить до «РОСТ»'
+  if (tariff.value === 'pro') return 'Продлить «РОСТ»'
+  if (tariff.value === 'basic') return 'Улучшить до «РОСТ»'
   return 'Купить «РОСТ»'
 })
 

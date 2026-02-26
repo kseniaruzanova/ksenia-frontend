@@ -58,6 +58,7 @@
                       <option value="none">Без подписки</option>
                       <option value="basic">Basic</option>
                       <option value="pro">Pro</option>
+                      <option value="tg_max">Доступ к ТГ и макс каналу</option>
                     </select>
                   </div>
 
@@ -364,7 +365,8 @@ function getTariffName(tariff) {
   const names = {
     'none': 'Без подписки',
     'basic': 'Basic',
-    'pro': 'Pro'
+    'pro': 'Pro',
+    'tg_max': 'Доступ к ТГ и макс каналу'
   }
   return names[tariff] || tariff
 }
@@ -392,7 +394,8 @@ function getTariffBadgeClass(tariff) {
   const classes = {
     'none': 'bg-gray-100 text-gray-800',
     'basic': 'bg-blue-100 text-blue-800',
-    'pro': 'bg-purple-100 text-purple-800'
+    'pro': 'bg-purple-100 text-purple-800',
+    'tg_max': 'bg-amber-100 text-amber-800'
   }
   return classes[tariff] || 'bg-gray-100 text-gray-800'
 }
