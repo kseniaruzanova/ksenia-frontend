@@ -60,7 +60,16 @@
             🔮 Таро
           </NuxtLink>
 
+          <template v-if="isCustomer && tariff === 'tg_max'">
+            <div class="flex items-center text-gray-500 px-4 py-2 cursor-not-allowed">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>🌟 Карта</span>
+            </div>
+          </template>
           <NuxtLink 
+            v-else
             to="/natal" 
             class="block text-white hover:bg-purple-900/50 px-4 py-2 rounded-lg transition-all duration-200 hover:translate-x-2 font-medium"
             @click="closeMenu"
@@ -77,6 +86,7 @@
           </NuxtLink>
 
           <NuxtLink 
+            v-if="!(isCustomer && tariff === 'tg_max')"
             to="/video-creator" 
             class="block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md"
             @click="closeMenu"
@@ -285,7 +295,16 @@
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
             </NuxtLink>
 
+            <template v-if="isCustomer && tariff === 'tg_max'">
+              <div class="flex items-center text-gray-500 cursor-not-allowed">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Карта</span>
+              </div>
+            </template>
             <NuxtLink 
+              v-else
               to="/natal" 
               class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
             >
@@ -302,6 +321,7 @@
             </NuxtLink>
 
             <NuxtLink 
+              v-if="!(isCustomer && tariff === 'tg_max')"
               to="/video-creator" 
               class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
@@ -503,19 +523,19 @@ const isMobileMenuOpen = ref(false)
 // Конфигурация доступности пунктов меню
 const menuItemsAvailability = {
   subscription: ['none', 'basic', 'pro', 'tg_max'],
-  messenger: ['basic', 'pro', 'tg_max'],
-  constructor: ['basic', 'pro', 'tg_max'],
-  users: ['basic', 'pro', 'tg_max'],
-  messages: ['pro', 'tg_max'],
-  settings: ['pro', 'tg_max'],
-  payments: ['pro', 'tg_max']
+  messenger: ['basic', 'pro'],
+  constructor: ['basic', 'pro'],
+  users: ['basic', 'pro'],
+  messages: ['pro'],
+  settings: ['pro'],
+  payments: ['pro']
 }
 
 // Функция проверки доступности пункта меню
 function isMenuItemLocked(menuItem) {
   // Админам всегда доступны все пункты меню
   if (isAdmin.value) return true
-  
+
   // Проверяем доступность для текущего тарифа
   const availableForTariffs = menuItemsAvailability[menuItem]
   return availableForTariffs && availableForTariffs.includes(tariff.value)

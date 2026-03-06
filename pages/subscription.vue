@@ -39,7 +39,7 @@
         </section>
 
         <!-- Plan cards -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <!-- BASIC -->
           <article
             class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition p-8 flex flex-col"
@@ -65,6 +65,33 @@
               :disabled="loading || tariff === 'pro' || tariff === 'tg_max'"
             >
               {{ tariff === 'basic' ? 'Продлить' : 'Купить' }} «БАЗОВЫЙ»
+            </button>
+          </article>
+
+          <!-- TG_MAX -->
+          <article
+            class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition p-8 flex flex-col border-2 border-amber-200"
+          >
+            <div class="mb-6">
+              <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+                📢 Доступ к ТГ и макс каналу
+              </h2>
+              <p class="text-lg font-medium text-gray-600 mt-1">1 990₽ / мес</p>
+            </div>
+
+            <ul class="text-gray-700 space-y-3 flex-1 mb-6">
+              <li class="flex gap-2"><span>✅</span>Доступ в Telegram-канал</li>
+              <li class="flex gap-2"><span>✅</span>Закрытый контент и обновления</li>
+              <li class="flex gap-2"><span>✅</span>Одноразовые ссылки для входа</li>
+              <li class="flex gap-2"><span>ℹ️</span>Без доступа к системе управления</li>
+            </ul>
+
+            <button
+              @click="startPayment('tg_max')"
+              class="px-6 py-3 rounded-lg bg-amber-500 text-white hover:bg-amber-600 font-medium transition shadow disabled:opacity-60 disabled:cursor-not-allowed"
+              :disabled="loading"
+            >
+              {{ tariff === 'tg_max' ? 'Продлить' : 'Купить' }} «Доступ к ТГ»
             </button>
           </article>
 
@@ -133,7 +160,7 @@ const ctaProLabel = computed(() => {
 
 const config = useRuntimeConfig()
 
-async function startPayment(plan: 'basic'|'pro') {
+async function startPayment(plan: 'basic'|'pro'|'tg_max') {
   try {
     loading.value = true
     const response = await fetch(`${config.public.apiBase}/api/prodamus/create/link/${plan}`, {
