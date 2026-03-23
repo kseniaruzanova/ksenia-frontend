@@ -25,17 +25,34 @@
           </svg>
         </button>
         
-        <button
-          @click="handleLogout"
-          class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 shadow-md"
-        >
-          <span class="flex items-center">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
-            Выйти
-          </span>
-        </button>
+        <div class="flex items-center gap-2">
+          <NuxtLink
+            v-if="!isAuthed"
+            to="/login"
+            class="bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 shadow-md border border-white/10"
+          >
+            Войти
+          </NuxtLink>
+          <NuxtLink
+            v-if="!isAuthed"
+            to="/register"
+            class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 shadow-md"
+          >
+            Регистрация
+          </NuxtLink>
+          <button
+            v-else
+            @click="handleLogout"
+            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 shadow-md"
+          >
+            <span class="flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              </svg>
+              Выйти
+            </span>
+          </button>
+        </div>
       </div>
 
       <!-- Выпадающее меню для мобильных -->
@@ -45,7 +62,7 @@
       >
         <div class="space-y-2">
           <NuxtLink 
-            to="/" 
+            :to="homeRoute" 
             class="block text-white hover:bg-purple-900/50 px-4 py-2 rounded-lg transition-all duration-200 hover:translate-x-2 font-medium"
             @click="closeMenu"
           >
@@ -93,6 +110,24 @@
           >
             🎬 Создатель видео
           </NuxtLink>
+
+          <!-- Гостевые ссылки -->
+          <template v-if="!isAuthed">
+            <NuxtLink
+              to="/login"
+              class="block bg-white/10 hover:bg-white/15 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md border border-white/10"
+              @click="closeMenu"
+            >
+              🔐 Войти
+            </NuxtLink>
+            <NuxtLink
+              to="/register"
+              class="block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md"
+              @click="closeMenu"
+            >
+              ✨ Регистрация
+            </NuxtLink>
+          </template>
 
           <!-- Ссылки для Админа -->
           <template v-if="isAdmin">
@@ -280,7 +315,7 @@
         <div class="flex items-center justify-center px-6 py-3">
           <div class="flex items-center flex-wrap gap-4 justify-center">
             <NuxtLink 
-              to="/" 
+              :to="homeRoute" 
               class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
             >
               Главная
@@ -497,7 +532,23 @@
               </template>
             </template>
 
+            <template v-if="!isAuthed">
+              <NuxtLink
+                to="/login"
+                class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
+              >
+                Войти
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
+              </NuxtLink>
+              <NuxtLink
+                to="/register"
+                class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                Регистрация
+              </NuxtLink>
+            </template>
             <button
+              v-else
               @click="handleLogout"
               class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
@@ -517,8 +568,10 @@
 
 <script setup>
 const router = useRouter()
-const { isAdmin, isCustomer, tariff, username } = useAuth()
+const { user, isAdmin, isCustomer, tariff, username } = useAuth()
 const isMobileMenuOpen = ref(false)
+const isAuthed = computed(() => Boolean(user.value))
+const homeRoute = computed(() => (isAuthed.value ? '/cabinet' : '/'))
 
 // Конфигурация доступности пунктов меню
 const menuItemsAvailability = {

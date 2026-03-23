@@ -6,7 +6,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
   if (!isCustomer.value && !isAdmin.value) {
     // Если пользователь не кастомер и не админ, перенаправляем на главную.
     // Глобальный middleware уже должен обработать неавторизованных пользователей.
-    return navigateTo('/');
+    return navigateTo('/cabinet');
   }
   // Если роль 'customer' или 'admin', доступ разрешен.
 });

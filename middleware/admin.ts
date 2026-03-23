@@ -25,7 +25,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
     if (role !== 'admin') {
       // Если пользователь не админ, перенаправляем на главную.
       // Можно также создать страницу "Доступ запрещен".
-      return navigateTo('/');
+      return navigateTo('/cabinet');
     }
     // Если роль 'admin', то доступ разрешен.
   } else {

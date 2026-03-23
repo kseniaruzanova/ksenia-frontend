@@ -1,53 +1,66 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50">
-    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Вход в систему
-        </h2>
-      </div>
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
-        <div class="rounded-md shadow-sm -space-y-px">
-          <div>
-            <label for="login" class="sr-only">Логин</label>
-            <input
-              id="login"
-              v-model="formData.login"
-              name="login"
-              type="text"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Логин"
-            />
-          </div>
-          <div>
-            <label for="password" class="sr-only">Пароль</label>
-            <input
-              id="password"
-              v-model="formData.password"
-              name="password"
-              type="password"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Пароль"
-            />
-          </div>
+  <div class="min-h-screen bg-gray-50">
+    <Navbar />
+
+    <div class="max-w-3xl mx-auto px-4 py-10">
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="p-6 md:p-8 border-b border-gray-100">
+          <h1 class="text-3xl font-bold text-gray-900">Вход в систему</h1>
+          <p class="mt-2 text-gray-600">
+            Введите логин и пароль для доступа к личному кабинету.
+          </p>
         </div>
 
-        <div>
-          <button
-            type="submit"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            :disabled="loading"
-          >
-            {{ loading ? 'Вход...' : 'Войти' }}
-          </button>
+        <div class="p-6 md:p-8">
+          <form class="space-y-4" @submit.prevent="handleLogin">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1" for="login">Логин</label>
+              <input
+                id="login"
+                v-model="formData.login"
+                name="login"
+                type="text"
+                required
+                placeholder="Введите логин"
+                class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1" for="password">Пароль</label>
+              <input
+                id="password"
+                v-model="formData.password"
+                name="password"
+                type="password"
+                required
+                placeholder="Введите пароль"
+                class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="submit"
+                class="inline-flex justify-center items-center px-6 py-3 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                :disabled="loading"
+              >
+                {{ loading ? 'Вход...' : 'Войти' }}
+              </button>
+              <NuxtLink
+                to="/register"
+                class="inline-flex justify-center items-center px-6 py-3 rounded-lg border border-gray-200 text-gray-800 font-semibold hover:bg-gray-50 transition"
+              >
+                Нет аккаунта — Регистрация
+              </NuxtLink>
+            </div>
+
+            <p v-if="error" class="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg p-3">
+              {{ error }}
+            </p>
+          </form>
         </div>
-        
-        <div v-if="error" class="text-red-500 text-sm text-center">
-          {{ error }}
-        </div>
-      </form>
+      </div>
     </div>
   </div>
 </template>
@@ -93,12 +106,12 @@ async function handleLogin() {
     console.log('Токен сохранен:', data.token ? 'да' : 'нет')
     console.log('Роль пользователя:', data.role)
 
-    // Перенаправляем на главную
-    await router.push('/')
+    // Перенаправляем в кабинет
+    await router.push('/cabinet')
   } catch (e) {
     error.value = e.message || 'Произошла ошибка при входе'
   } finally {
     loading.value = false
   }
 }
-</script> 
+</script>
