@@ -102,6 +102,15 @@
             📚 Школа
           </NuxtLink>
 
+          <NuxtLink
+            v-if="isAuthed"
+            to="/posts"
+            class="block text-white hover:bg-purple-900/50 px-4 py-2 rounded-lg transition-all duration-200 hover:translate-x-2 font-medium"
+            @click="closeMenu"
+          >
+            📝 Посты
+          </NuxtLink>
+
           <NuxtLink 
             v-if="!(isCustomer && tariff === 'tg_max')"
             to="/video-creator" 
@@ -352,6 +361,15 @@
               class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
             >
               Школа
+              <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
+            </NuxtLink>
+
+            <NuxtLink
+              v-if="isAuthed"
+              to="/posts"
+              class="text-white hover:text-purple-300 transition-colors duration-200 font-medium relative group"
+            >
+              Посты
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
             </NuxtLink>
 

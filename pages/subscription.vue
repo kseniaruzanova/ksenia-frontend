@@ -76,7 +76,7 @@
               <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2">
                 📢 Доступ к ТГ и макс каналу
               </h2>
-              <p class="text-lg font-medium text-gray-600 mt-1">1 990₽ / мес</p>
+              <p class="text-lg font-medium text-gray-600 mt-1">990₽ / мес</p>
             </div>
 
             <ul class="text-gray-700 space-y-3 flex-1 mb-6">

@@ -12,6 +12,24 @@
           </p>
         </div>
 
+        <div class="mb-8 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white shadow-lg">
+          <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 class="text-2xl font-bold">Посты</h2>
+              <p class="mt-2 max-w-2xl text-sm text-purple-100 md:text-base">
+                Этот раздел создан как замена Telegram-каналу
+              </p>
+            </div>
+
+            <NuxtLink
+              to="/posts"
+              class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 font-semibold text-purple-700 transition hover:bg-purple-50"
+            >
+              Открыть посты
+            </NuxtLink>
+          </div>
+        </div>
+
         <template v-if="isCustomer">
           <!-- Информация о текущей подписке -->
           <div class="mb-6">
