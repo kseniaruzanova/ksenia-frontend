@@ -29,6 +29,7 @@ export default defineNuxtRouteMiddleware((to) => {
     '/club',
     '/club/login',
     '/club/register',
+    '/club/pay/success',
     '/login',
     '/register',
     '/notification/success',

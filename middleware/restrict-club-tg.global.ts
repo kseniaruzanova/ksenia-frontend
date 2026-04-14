@@ -22,6 +22,8 @@ export default defineNuxtRouteMiddleware((to) => {
     const allowed = new Set([
       '/cabinet',
       '/subscription',
+      '/club/pay',
+      '/club/pay/success',
       '/notification/success',
       '/notification/fail'
     ])
@@ -32,6 +34,7 @@ export default defineNuxtRouteMiddleware((to) => {
   if ((payload.role === 'customer' || payload.role === 'club_member') && tariff === 'none' && clubIntent) {
     const allowed = new Set([
       '/club/pay',
+      '/club/pay/success',
       '/club',
       '/club/login',
       '/club/register',
