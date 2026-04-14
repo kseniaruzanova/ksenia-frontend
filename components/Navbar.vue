@@ -1,5 +1,34 @@
 <template>
-  <nav class="bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900 shadow-lg border-b border-purple-500/20">
+  <nav
+    v-if="minimalCustomerNav"
+    class="bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900 shadow-lg border-b border-purple-500/20"
+  >
+    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-6">
+      <button
+        v-if="isClubMember"
+        type="button"
+        class="inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/15"
+        @click="goToPlatform"
+      >
+        Перейти на платформу
+      </button>
+      <div v-else class="min-w-0 flex-1" aria-hidden="true" />
+      <button
+        type="button"
+        @click="handleLogout"
+        class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-red-700"
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+        </svg>
+        Выйти
+      </button>
+    </div>
+  </nav>
+  <nav
+    v-else
+    class="bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900 shadow-lg border-b border-purple-500/20"
+  >
     <!-- Мобильное меню (бургер) -->
     <div class="lg:hidden">
       <div class="flex items-center justify-between p-4">
@@ -77,7 +106,7 @@
             🔮 Таро
           </NuxtLink>
 
-          <template v-if="isCustomer && tariff === 'tg_max'">
+          <template v-if="(isCustomer || isClubMember) && tariff === 'tg_max'">
             <div class="flex items-center text-gray-500 px-4 py-2 cursor-not-allowed">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -112,7 +141,7 @@
           </NuxtLink>
 
           <NuxtLink 
-            v-if="!(isCustomer && tariff === 'tg_max')"
+            v-if="!((isCustomer || isClubMember) && tariff === 'tg_max')"
             to="/video-creator" 
             class="block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md"
             @click="closeMenu"
@@ -174,6 +203,13 @@
               @click="closeMenu"
             >
               Ежедневные сообщения
+            </NuxtLink>
+            <NuxtLink 
+              to="/email-mailing" 
+              class="block text-white hover:bg-gray-700 px-4 py-2 rounded-md transition-colors"
+              @click="closeMenu"
+            >
+              Рассылка на почту
             </NuxtLink>
             <NuxtLink 
               to="/ai-settings" 
@@ -339,7 +375,7 @@
               <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
             </NuxtLink>
 
-            <template v-if="isCustomer && tariff === 'tg_max'">
+            <template v-if="(isCustomer || isClubMember) && tariff === 'tg_max'">
               <div class="flex items-center text-gray-500 cursor-not-allowed">
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -374,7 +410,7 @@
             </NuxtLink>
 
             <NuxtLink 
-              v-if="!(isCustomer && tariff === 'tg_max')"
+              v-if="!((isCustomer || isClubMember) && tariff === 'tg_max')"
               to="/video-creator" 
               class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
@@ -416,6 +452,13 @@
                 class="text-white hover:text-purple-300 transition-colors duration-200 relative group"
               >
                 Ежедневные сообщения
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
+              </NuxtLink>
+              <NuxtLink 
+                to="/email-mailing" 
+                class="text-white hover:text-purple-300 transition-colors duration-200 relative group"
+              >
+                Рассылка на почту
                 <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-200"></span>
               </NuxtLink>
               <NuxtLink 
@@ -586,10 +629,20 @@
 
 <script setup>
 const router = useRouter()
-const { user, isAdmin, isCustomer, tariff, username } = useAuth()
+const { user, isAdmin, isCustomer, isClubMember, tariff, username } = useAuth()
+const clubIntentCookie = useCookie('ksenia-club-intent')
 const isMobileMenuOpen = ref(false)
 const isAuthed = computed(() => Boolean(user.value))
 const homeRoute = computed(() => (isAuthed.value ? '/cabinet' : '/'))
+
+/** Урезанное меню: тариф tg_max / воронка клуба, либо любой аккаунт с ролью club_member. */
+const minimalCustomerNav = computed(() => {
+  if (isAdmin.value) return false
+  if (isClubMember.value) return true
+  if (!isCustomer.value) return false
+  const clubIntent = clubIntentCookie.value === '1'
+  return tariff.value === 'tg_max' || (tariff.value === 'none' && clubIntent)
+})
 
 // Конфигурация доступности пунктов меню
 const menuItemsAvailability = {
@@ -616,10 +669,21 @@ function closeMenu() {
   isMobileMenuOpen.value = false
 }
 
-function handleLogout() {
+function clearClubSession() {
   const cookie = useCookie('bearer-token')
   cookie.value = null
-  router.push('/login')
+  clubIntentCookie.value = null
+}
+
+/** Сессия клуба сбрасывается — на платформе вы гость (токен не передаётся). */
+function goToPlatform() {
+  clearClubSession()
+  router.push('/platform')
+}
+
+function handleLogout() {
+  clearClubSession()
+  router.push('/')
 }
 </script>
 

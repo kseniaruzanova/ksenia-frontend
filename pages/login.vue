@@ -23,7 +23,7 @@
                 required
                 placeholder="Введите логин"
                 class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              />
+              >
             </div>
 
             <div>
@@ -36,7 +36,7 @@
                 required
                 placeholder="Введите пароль"
                 class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              />
+              >
             </div>
 
             <div class="flex flex-col sm:flex-row gap-3 pt-2">
@@ -66,6 +66,14 @@
 </template>
 
 <script setup>
+const route = useRoute()
+
+onMounted(() => {
+  if (route.query.flow === 'club') {
+    navigateTo({ path: '/club/login', query: {} }, { replace: true })
+  }
+})
+
 const formData = ref({
   login: '',
   password: ''
@@ -80,7 +88,7 @@ async function handleLogin() {
   try {
     loading.value = true
     error.value = ''
-    
+
     const response = await fetch(`${config.public.apiBase}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -95,18 +103,13 @@ async function handleLogin() {
       throw new Error(data.message || 'Ошибка при входе')
     }
 
-    // Сохраняем токен в куки с правильными параметрами
     const cookie = useCookie('bearer-token', {
-      maxAge: 60 * 60 * 16, // 8 часов
+      maxAge: 60 * 60 * 16,
       path: '/',
       sameSite: 'lax'
     })
     cookie.value = data.token
 
-    console.log('Токен сохранен:', data.token ? 'да' : 'нет')
-    console.log('Роль пользователя:', data.role)
-
-    // Перенаправляем в кабинет
     await router.push('/cabinet')
   } catch (e) {
     error.value = e.message || 'Произошла ошибка при входе'

@@ -20,9 +20,7 @@ export const useAuth = () => {
       const decoded = jwtDecode<any>(tokenCookie.value);
 
       return {
-        // Ищем ID в полях customerId ( для кастомера) или id (для админа).
-        // Это делает логику более гибкой.
-        id: decoded.customerId || decoded.id, 
+        id: decoded.customerId || decoded.clubMemberId || decoded.id,
         role: decoded.role,
         login: decoded.login,
         username: decoded.username,
@@ -37,8 +35,9 @@ export const useAuth = () => {
   
   const isAdmin = computed(() => user.value?.role === 'admin');
   const isCustomer = computed(() => user.value?.role === 'customer');
+  const isClubMember = computed(() => user.value?.role === 'club_member');
   const tariff = computed(() => user.value?.tariff ?? 'none');
   const username = computed(() => user.value?.username ?? '');
 
-  return { user, isAdmin, isCustomer, tariff, username };
+  return { user, isAdmin, isCustomer, isClubMember, tariff, username };
 }; 

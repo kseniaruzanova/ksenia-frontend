@@ -24,7 +24,7 @@
                   placeholder="name@email.com"
                   class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   required
-                />
+                >
                 <p class="mt-2 text-xs text-gray-500">На указанный email придет код подтверждения.</p>
               </div>
 
@@ -39,11 +39,11 @@
                   placeholder="Минимум 6 символов"
                   class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   required
-                />
+                >
               </div>
 
               <label class="flex items-start gap-3 text-sm text-gray-700">
-                <input v-model="consent" type="checkbox" class="mt-1" required />
+                <input v-model="consent" type="checkbox" class="mt-1" required>
                 <span>
                   Я согласен(на) на обработку данных и получение сообщений (рассылки).
                 </span>
@@ -73,7 +73,7 @@
                   placeholder="123456"
                   class="w-full rounded-lg border border-gray-300 px-4 py-3 tracking-[0.35em] text-center text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   required
-                />
+                >
               </div>
             </template>
 
@@ -149,12 +149,27 @@ const createdLogin = ref('')
 
 const config = useRuntimeConfig()
 const router = useRouter()
+const route = useRoute()
+
+const clubIntentCookie = useCookie('ksenia-club-intent', {
+  maxAge: 60 * 60 * 24 * 90,
+  path: '/',
+  sameSite: 'lax'
+})
+
+onMounted(() => {
+  if (route.query.flow === 'club') {
+    navigateTo({ path: '/club/register', query: {} }, { replace: true })
+    return
+  }
+  clubIntentCookie.value = null
+})
 
 function getRegistrationPayload() {
   return {
     email: email.value.toLowerCase(),
     channel: 'email',
-    password: password.value,
+    password: password.value
   }
 }
 
@@ -177,7 +192,7 @@ async function submitRegistrationCode() {
     const res = await fetch(`${config.public.apiBase}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     })
 
     const data = await res.json().catch(() => ({}))
@@ -214,7 +229,7 @@ async function verifyRegistration() {
     const res = await fetch(`${config.public.apiBase}/api/auth/register/verify-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     })
 
     const data = await res.json().catch(() => ({}))
@@ -225,14 +240,13 @@ async function verifyRegistration() {
     const loginValue: string = data.login || email.value.toLowerCase()
     createdLogin.value = loginValue
 
-    // После регистрации сразу авторизуем пользователя.
     const loginRes = await fetch(`${config.public.apiBase}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         login: loginValue,
-        password: password.value,
-      }),
+        password: password.value
+      })
     })
 
     const loginData = await loginRes.json().catch(() => ({}))
@@ -268,4 +282,3 @@ async function handleSubmit() {
   await verifyRegistration()
 }
 </script>
-
